@@ -1,0 +1,4 @@
+# Smart Hotel Guest Service Platform — concept prototype
+# Not a production site; discourage indexing.
+User-agent: *
+Disallow: /

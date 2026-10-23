@@ -1,0 +1,333 @@
+@import "tailwindcss";
+
+/* ============================================================================
+   Design tokens — "Taj Santacruz Smart Guest Platform" concept prototype
+   Palette: midnight navy · warm ivory · champagne gold · muted sage · warm grey
+   ==========================================================================*/
+@theme {
+  /* Ink — midnight navy & charcoal (navigation, headers, staff chrome) */
+  --color-ink-950: #060d15;
+  --color-ink-900: #0b1622;
+  --color-ink-850: #0e1c2b;
+  --color-ink-800: #122337;
+  --color-ink-700: #173049;
+  --color-ink-600: #22405c;
+  --color-ink-500: #33556f;
+
+  /* Ivory & cream — guest-facing surfaces */
+  --color-ivory-50: #fcfaf6;
+  --color-ivory-100: #f8f4ec;
+  --color-cream-200: #f1ebe1;
+  --color-cream-300: #e7ded0;
+  --color-sand-400: #d9cdb8;
+
+  /* Champagne gold & brushed brass — restrained accents */
+  --color-gold-200: #efe3c8;
+  --color-gold-300: #e0cda6;
+  --color-gold-400: #d0b584;
+  --color-gold-500: #c2a266;
+  --color-gold-600: #7a5f30;
+  --color-gold-700: #876a37;
+  --color-gold-800: #6f5529; /* gold text on pale gold tints */
+
+  /* Sage & forest — successful states */
+  --color-sage-300: #a9bfae;
+  --color-sage-400: #8aa692;
+  --color-sage-500: #6b8b73;
+  --color-sage-600: #52705b;
+  --color-forest-700: #39553f;
+
+  /* Warm grey — secondary text & surfaces */
+  --color-warm-50: #f5f2ed;
+  --color-warm-100: #ebe6de;
+  --color-warm-200: #ded8ce;
+  --color-warm-300: #c6beb2;
+  --color-warm-400: #a79e92;
+  --color-warm-500: #68615a;
+  --color-warm-600: #635d55;
+  --color-warm-700: #544f49;
+
+  /* Restrained semantic accents (no neon, no rainbow) */
+  --color-brass-500: #c08a3e; /* awaiting action */
+  --color-clay-400: #c98d6e; /* urgent text on ink surfaces */
+  --color-clay-500: #a8674a; /* urgent / rejected */
+  --color-clay-600: #8d5438;
+
+  /* Typography */
+  --font-sans: "Inter", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --font-display: "Cormorant Garamond", "Cormorant", Georgia, "Times New Roman", serif;
+
+  /* Elevation — deliberately soft and low-contrast */
+  --shadow-hairline: 0 1px 2px rgb(11 22 34 / 0.04);
+  --shadow-lift: 0 1px 2px rgb(11 22 34 / 0.05), 0 10px 24px -14px rgb(11 22 34 / 0.18);
+  --shadow-panel: 0 1px 3px rgb(11 22 34 / 0.05), 0 26px 60px -34px rgb(11 22 34 / 0.3);
+  --shadow-pop: 0 2px 6px rgb(11 22 34 / 0.08), 0 20px 46px -22px rgb(11 22 34 / 0.32);
+
+  /* Motion */
+  --animate-fade-up: fade-up 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-fade-in: fade-in 0.35s ease both;
+  --animate-scale-in: scale-in 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-slide-in: slide-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-soft-pulse: soft-pulse 2.6s ease-in-out infinite;
+  --animate-marquee: marquee 26s linear infinite;
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(18px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes soft-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* ============================================================================
+   Base
+   ==========================================================================*/
+@layer base {
+  *,
+  ::before,
+  ::after {
+    border-color: var(--color-cream-300);
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100dvh;
+    background-color: var(--color-ivory-50);
+    color: var(--color-ink-900);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-gold-600);
+    outline-offset: 2px;
+    border-radius: 3px;
+  }
+
+  ::selection {
+    background: var(--color-gold-200);
+    color: var(--color-ink-900);
+  }
+
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+
+  input,
+  textarea,
+  select,
+  button {
+    font: inherit;
+    color: inherit;
+  }
+
+  /* Slim, quiet scrollbars for dense operational tables */
+  .scroll-slim {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-warm-300) transparent;
+  }
+  .scroll-slim::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  .scroll-slim::-webkit-scrollbar-thumb {
+    background: var(--color-warm-300);
+    border-radius: 8px;
+  }
+  .scroll-slim::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* ============================================================================
+   Shared typographic & surface primitives
+   ==========================================================================*/
+@layer components {
+  /* Letterspaced uppercase micro-label — the connective tissue of the system */
+  .eyebrow {
+    font-size: 0.6875rem;
+    line-height: 1;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+
+  .eyebrow-sm {
+    font-size: 0.625rem;
+    line-height: 1;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+
+  .display {
+    font-family: var(--font-display);
+    font-weight: 400;
+    letter-spacing: -0.01em;
+    line-height: 1.06;
+  }
+
+  .tnum {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+  }
+
+  /* Editorial rule used to separate sections without heavy borders */
+  .rule-top {
+    border-top: 1px solid var(--color-cream-300);
+  }
+
+  /* Dark-surface divider */
+  .rule-top-dark {
+    border-top: 1px solid rgb(255 255 255 / 0.1);
+  }
+
+  /* Ivory page with a faint paper grain suggestion */
+  .surface-ivory {
+    background-color: var(--color-ivory-50);
+  }
+
+  .surface-ink {
+    background-color: var(--color-ink-900);
+    color: var(--color-ivory-100);
+  }
+
+  /* Quiet chip used for location / meta context */
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.3rem 0.7rem;
+    border-radius: 999px;
+    border: 1px solid var(--color-sand-400);
+    background: rgb(255 255 255 / 0.7);
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+    color: var(--color-warm-700);
+  }
+
+  .chip-dark {
+    border-color: rgb(255 255 255 / 0.16);
+    background: rgb(255 255 255 / 0.06);
+    color: var(--color-cream-200);
+  }
+
+  /* Gold hairline used as a premium separator under headings */
+  .gold-hairline {
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      var(--color-gold-500),
+      color-mix(in srgb, var(--color-gold-500) 25%, transparent)
+    );
+  }
+
+  /* Photo scrim so overlaid type stays legible on any image */
+  .photo-scrim {
+    background: linear-gradient(
+      180deg,
+      rgb(6 13 21 / 0.15) 0%,
+      rgb(6 13 21 / 0.42) 55%,
+      rgb(6 13 21 / 0.78) 100%
+    );
+  }
+
+  /*
+   * Contrast-safe muted text on ink surfaces.
+   *
+   * The warm-grey and brass tokens above are tuned for ivory/white pages. On
+   * the dark department, kiosk and management surfaces the same values fall to
+   * ~4.2:1, so inside an ink panel we lift them to their lighter siblings.
+   * Custom properties cascade to descendants, so one rule per surface fixes
+   * every dark panel — headings, eyebrows, timestamps and placeholders alike.
+   */
+  .bg-ink-950,
+  .bg-ink-900,
+  .bg-ink-850,
+  .bg-ink-800,
+  .surface-ink {
+    --color-warm-500: #a79e92;
+    --color-warm-600: #a79e92;
+    --color-gold-600: #d0b584;
+  }
+}
+
+/* ============================================================================
+   Reduced motion
+   ==========================================================================*/
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
