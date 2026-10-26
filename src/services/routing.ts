@@ -107,10 +107,10 @@ export const ROUTING_RULES: RoutingRule[] = [
   {
     id: 'route.occasions',
     service: 'occasions',
-    department: 'concierge',
-    type: 'Special Occasion Request',
+    department: 'events',
+    type: 'Celebration Music Enquiry',
     defaultPriority: 'normal',
-    description: 'Cakes, flowers and celebration arrangements',
+    description: 'Music and entertainment enquiries for upcoming celebrations',
   },
   {
     id: 'route.billing',

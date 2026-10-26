@@ -1,44 +1,30 @@
 import type { ReactElement } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, TriangleAlert } from 'lucide-react';
-import { SERVICES } from '@/data/services';
+import { FOCUS_SERVICE_IDS, SERVICES } from '@/data/services';
 import { SERVICE_ICONS } from '@/features/guest/serviceIcons';
-import { FoodOrder } from '@/features/guest/FoodOrder';
 import { MusicRequests } from '@/features/guest/MusicRequests';
-import { HousekeepingRequests } from '@/features/guest/HousekeepingRequests';
-import { MaintenanceRequests } from '@/features/guest/MaintenanceRequests';
-import { ConciergeDesk } from '@/features/guest/ConciergeDesk';
-import { SpaBooking } from '@/features/guest/SpaBooking';
-import { TransportRequest } from '@/features/guest/TransportRequest';
-import { ReservationsPage } from '@/features/guest/ReservationsPage';
-import { OccasionRequests } from '@/features/guest/OccasionRequests';
-import { FeedbackForm } from '@/features/guest/FeedbackForm';
-import { BillingReview } from '@/features/guest/BillingReview';
+import { CelebrationEnquiry } from '@/features/guest/CelebrationEnquiry';
 import { Notice } from '@/components/ui/Feedback';
 import type { ServiceId } from '@/types';
 
 /**
  * The tablet reuses the very same service modules as the QR experience — one
  * implementation, two entry points, one shared request state.
+ *
+ * Only the two focus experiences are offered here; every other catalogue entry
+ * reports "not available" rather than exposing the hidden hotel services.
  */
-const KIOSK_VIEWS: Record<ServiceId, () => ReactElement> = {
-  food: FoodOrder,
+const KIOSK_VIEWS: Partial<Record<ServiceId, () => ReactElement>> = {
   music: MusicRequests,
-  housekeeping: HousekeepingRequests,
-  maintenance: MaintenanceRequests,
-  concierge: ConciergeDesk,
-  spa: SpaBooking,
-  transport: TransportRequest,
-  reservations: ReservationsPage,
-  occasions: OccasionRequests,
-  feedback: FeedbackForm,
-  billing: BillingReview,
+  occasions: CelebrationEnquiry,
 };
 
 export function KioskService() {
   const { service } = useParams<{ service: string }>();
   const definition = SERVICES.find((entry) => entry.id === service);
-  const View = service && service in KIOSK_VIEWS ? KIOSK_VIEWS[service as ServiceId] : null;
+  const inFocus = service ? FOCUS_SERVICE_IDS.includes(service as ServiceId) : false;
+  const View = service && inFocus ? KIOSK_VIEWS[service as ServiceId] : null;
 
   if (!definition || !View) {
     return (
@@ -47,14 +33,14 @@ export function KioskService() {
         <h1 className="display mt-4 text-[2rem] text-ink-900">Service not available</h1>
         <p className="mt-4 text-[14.5px] leading-relaxed text-warm-600">
           That service is not part of this demonstration. Return to the tablet home screen and pick
-          one of the available services.
+          one of the available experiences.
         </p>
         <Link
           to="/kiosk"
           className="mt-6 inline-flex h-11 items-center gap-2 rounded-[3px] bg-ink-900 px-5 text-[14px] font-medium text-ivory-50"
         >
           <ArrowLeft className="h-4 w-4" strokeWidth={1.7} />
-          Service home
+          Experience home
         </Link>
       </div>
     );
@@ -86,8 +72,8 @@ export function KioskService() {
       </p>
       <Notice className="mt-3" tone="gold" title="Presenter tip">
         <p>
-          Use the ribbon at the top to jump between this tablet, the guest QR experience, the six
-          department dashboards and the management overview — all of them share this session's data.
+          Use the ribbon at the top to jump between this tablet, the guest QR experience, the two
+          staff dashboards and the management overview — all of them share this session's data.
         </p>
       </Notice>
     </div>

@@ -167,34 +167,54 @@ export function statusLabel(request: Pick<ServiceRequest, 'status' | 'stage'>): 
   if (request.status === 'in_progress') {
     if (request.stage === 'preparing') return 'Preparing';
     if (request.stage === 'ready') return 'Ready';
-    if (request.stage === 'queued') return 'In the queue';
-    if (request.stage === 'playing') return 'Now playing';
+    if (request.stage === 'queued') return 'Queued';
+    if (request.stage === 'playing') return 'Playing';
     return 'In progress';
   }
   if (request.status === 'completed' && request.stage === 'played') return 'Played';
   if (request.status === 'submitted') return 'Submitted';
-  if (request.status === 'accepted') return 'Accepted';
+  if (request.status === 'accepted') {
+    return request.stage === 'deferred' ? 'Deferred' : 'Accepted';
+  }
   if (request.status === 'completed') return 'Completed';
-  if (request.status === 'rejected') return 'Declined';
+  if (request.status === 'rejected') return 'Rejected';
   if (request.status === 'cancelled') return 'Cancelled';
   return request.status;
 }
 
 /** Next guest-visible milestone description. */
 export function nextStepHint(request: ServiceRequest): string {
+  const music = request.service === 'music';
+
   switch (request.status) {
     case 'submitted':
-      return `${request.department === 'restaurant' ? 'Restaurant' : 'The team'} has been notified and will accept shortly.`;
+      return music
+        ? 'Your request is with the performer — it moves into the queue once accepted.'
+        : `${request.department === 'restaurant' ? 'Restaurant' : 'The team'} has been notified and will accept shortly.`;
     case 'accepted':
+      if (music) {
+        return request.stage === 'deferred'
+          ? 'The performer has set this request aside and may bring it back in a later set.'
+          : 'The performer has approved your request — it joins the queue in vote order.';
+      }
       return 'The department has accepted your request.';
     case 'in_progress':
+      if (music) {
+        if (request.stage === 'playing') return 'Your track is playing now.';
+        if (request.stage === 'queued') return 'Your track is in the queue — votes move it up the running order.';
+        return 'Your request is being worked on.';
+      }
       return request.stage === 'preparing'
         ? 'Your order is being prepared.'
         : 'Your request is being worked on.';
     case 'completed':
-      return 'This request has been completed.';
+      return music && request.stage === 'played'
+        ? 'Performed this evening — thank you for the request.'
+        : 'This request has been completed.';
     case 'rejected':
-      return 'This request was declined. Please contact the team for alternatives.';
+      return music
+        ? 'The performer has politely declined this track — usually because it sits outside the planned set. You are welcome to request another.'
+        : 'This request was declined. Please contact the team for alternatives.';
     case 'cancelled':
       return 'This request was cancelled.';
     default:

@@ -27,6 +27,17 @@ export function dateLabel(ts: number): string {
   });
 }
 
+/** Format a `YYYY-MM-DD` string (used by celebration enquiry dates) safely. */
+export function isoDateLabel(iso: string): string {
+  const [year, month, day] = iso.split('-').map(Number);
+  if (!year || !month || !day) return iso;
+  return new Date(year, month - 1, day).toLocaleDateString('en-IN', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
 export function fullTimestamp(ts: number): string {
   return `${dateLabel(ts)} · ${clockTime(ts)}`;
 }

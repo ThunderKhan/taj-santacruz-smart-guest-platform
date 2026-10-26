@@ -17,7 +17,7 @@ const AREAS: Array<{
   Icon: typeof Sparkles;
 }> = [
   { id: 'guest', label: 'Guest experience', short: 'Guest', path: '/guest', Icon: Sparkles },
-  { id: 'ops', label: 'Department operations', short: 'Ops', path: '/staff/restaurant', Icon: ClipboardList },
+  { id: 'ops', label: 'Staff dashboards', short: 'Staff', path: '/staff/entertainment', Icon: ClipboardList },
   { id: 'admin', label: 'Hotel management', short: 'Management', path: '/admin', Icon: ChartColumn },
 ];
 
@@ -33,7 +33,7 @@ export function PrototypeRibbon() {
   const location = useLocation();
   const { ribbonCollapsed, setRibbonCollapsed, resetDemo } = useRequests();
   const [confirmReset, setConfirmReset] = useState(false);
-  const lastOpsPath = useRef('/staff/restaurant');
+  const lastOpsPath = useRef('/staff/entertainment');
 
   const isOps = location.pathname.startsWith('/staff');
   const isKiosk = location.pathname.startsWith('/kiosk');
@@ -180,8 +180,8 @@ export function PrototypeRibbon() {
         }
       >
         <p className="text-[14px] leading-relaxed text-warm-600">
-          Use this between presentation runs so the housekeeping, restaurant, maintenance,
-          entertainment and concierge queues all return to the same starting point.
+          Use this between presentation runs so the song requests, queue, votes, dedications and
+          celebration enquiries all return to the same seeded starting point.
         </p>
       </Modal>
     </>

@@ -22,7 +22,7 @@ export function GuestLayout() {
   const openCount = mine.filter((request) => !isTerminal(request.status)).length;
 
   const navItems = [
-    { to: '/guest', label: 'Services', end: true },
+    { to: '/guest', label: 'Home', end: true },
     { to: '/guest/my-requests', label: 'My requests', end: false },
   ];
 
@@ -60,7 +60,7 @@ export function GuestLayout() {
                   )
                 }
               >
-                {item.label === 'Services' ? (
+                {item.label === 'Home' ? (
                   <Home className="h-4 w-4" strokeWidth={1.6} />
                 ) : (
                   <ClipboardList className="h-4 w-4" strokeWidth={1.6} />
@@ -111,16 +111,24 @@ export function GuestLayout() {
 
             <div className="flex flex-wrap gap-x-10 gap-y-6 text-[13px]">
               <div>
+                <p className="eyebrow-sm mb-3 text-warm-500">Experiences</p>
+                <ul className="space-y-2 text-warm-700">
+                  <li>
+                    <Link to="/guest/music" className="hover:text-ink-900">Live Music Requests</Link>
+                  </li>
+                  <li>
+                    <Link to="/guest/occasions" className="hover:text-ink-900">Plan a Celebration</Link>
+                  </li>
+                </ul>
+              </div>
+              <div>
                 <p className="eyebrow-sm mb-3 text-warm-500">Your stay</p>
                 <ul className="space-y-2 text-warm-700">
                   <li>
-                    <Link to="/guest" className="hover:text-ink-900">All services</Link>
+                    <Link to="/guest" className="hover:text-ink-900">Home</Link>
                   </li>
                   <li>
                     <Link to="/guest/my-requests" className="hover:text-ink-900">My requests</Link>
-                  </li>
-                  <li>
-                    <Link to="/guest/billing" className="hover:text-ink-900">Billing review</Link>
                   </li>
                 </ul>
               </div>

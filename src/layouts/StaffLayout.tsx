@@ -1,5 +1,5 @@
 import { Link, NavLink, Outlet } from 'react-router-dom';
-import { DEPARTMENTS, departmentName } from '@/data/departments';
+import { FOCUS_DEPARTMENTS, departmentName, findDepartment } from '@/data/departments';
 import { useRequests } from '@/store/RequestsProvider';
 import { useRibbonOffset } from '@/hooks/useRibbonOffset';
 import { useActiveDepartment } from '@/hooks/useActiveDepartment';
@@ -8,29 +8,38 @@ import { NotificationBell } from '@/components/NotificationBell';
 import { CountChip } from '@/components/ui/Badge';
 import { DEPARTMENT_ICONS, DEPARTMENT_SHORT } from '@/features/departments/departmentMeta';
 import { isTerminal } from '@/services/requestEngine';
+import { isEnquiryTerminal } from '@/services/enquiryEngine';
 import { PROPERTY } from '@/data/property';
 import { cx } from '@/utils/format';
+import type { DepartmentId } from '@/types';
 
 /**
- * Dark operations console shared by all six department dashboards.
- * Midnight navy chrome with a fixed department rail — purpose-built for staff
+ * Dark operations console shared by the staff dashboards.
+ * Midnight navy chrome with a fixed desk rail — purpose-built for staff
  * rather than a light consumer layout shrunk down.
+ *
+ * The rail surfaces the two focus desks of this prototype (Live Music and
+ * Events & Banquets). The remaining department routes still resolve by URL;
+ * they are simply not advertised here.
  */
 export function StaffLayout() {
   const offset = useRibbonOffset();
   const active = useActiveDepartment();
-  const { requests } = useRequests();
+  const { requests, enquiries } = useRequests();
 
-  const openCount = (department: string) =>
-    requests.filter(
+  const openEnquiries = enquiries.filter((enquiry) => !isEnquiryTerminal(enquiry.status));
+
+  const openCount = (department: DepartmentId) => {
+    if (department === 'events') return openEnquiries.length;
+    return requests.filter(
       (request) =>
         request.department === department &&
         (request.status === 'submitted' || request.status === 'accepted'),
     ).length;
+  };
 
-  const totalOpen = requests.filter(
-    (request) => !isTerminal(request.status),
-  ).length;
+  const totalOpen =
+    requests.filter((request) => !isTerminal(request.status)).length + openEnquiries.length;
 
   return (
     <div className="min-h-dvh bg-ink-900 text-cream-200">
@@ -71,10 +80,11 @@ export function StaffLayout() {
           className="sticky hidden w-[248px] shrink-0 self-start border-r border-white/10 lg:block"
           style={{ top: offset + 56 }}
         >
-          <nav aria-label="Departments" className="py-5">
-            <p className="eyebrow-sm px-5 pb-3 text-warm-500">Queues</p>
+          <nav aria-label="Desks" className="py-5">
+            <p className="eyebrow-sm px-5 pb-3 text-warm-500">Focus desks</p>
             <ul>
-              {DEPARTMENTS.map((department) => {
+              {FOCUS_DEPARTMENTS.map((departmentId) => {
+                const department = findDepartment(departmentId);
                 const Icon = DEPARTMENT_ICONS[department.id];
                 const current = department.id === active;
                 const count = openCount(department.id);
@@ -123,10 +133,11 @@ export function StaffLayout() {
         <div className="min-w-0 flex-1">
           {/* Mobile department strip */}
           <nav
-            aria-label="Departments"
+            aria-label="Desks"
             className="flex gap-1 overflow-x-auto border-b border-white/10 px-3 py-2 no-scrollbar lg:hidden"
           >
-            {DEPARTMENTS.map((department) => {
+            {FOCUS_DEPARTMENTS.map((departmentId) => {
+              const department = findDepartment(departmentId);
               const Icon = DEPARTMENT_ICONS[department.id];
               const current = department.id === active;
               const count = openCount(department.id);

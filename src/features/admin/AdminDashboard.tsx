@@ -51,7 +51,7 @@ const STATUS_SERIES: Array<{ status: ServiceRequest['status']; label: string; co
   { status: 'accepted', label: 'Accepted', color: PALETTE.ink },
   { status: 'in_progress', label: 'In progress', color: PALETTE.gold },
   { status: 'completed', label: 'Completed', color: PALETTE.sage },
-  { status: 'rejected', label: 'Declined', color: PALETTE.clay },
+  { status: 'rejected', label: 'Rejected', color: PALETTE.clay },
   { status: 'cancelled', label: 'Cancelled', color: PALETTE.warm },
 ];
 

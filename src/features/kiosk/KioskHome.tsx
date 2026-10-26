@@ -43,7 +43,7 @@ export function KioskHome() {
 
               <h1 className="display mt-5 max-w-3xl text-[clamp(2.1rem,5vw,3.4rem)] text-ivory-50">
                 Good to see you.
-                <span className="mt-1 block text-cream-300">Touch a service to begin.</span>
+                <span className="mt-1 block text-cream-300">Touch an experience to begin.</span>
               </h1>
 
               <div className="mt-6 flex flex-wrap items-center gap-3">
@@ -68,8 +68,8 @@ export function KioskHome() {
                 <div className="text-left lg:text-right">
                   <p className="eyebrow-sm text-warm-400">Prefer your own phone?</p>
                   <p className="mt-2 max-w-[220px] text-[13.5px] leading-relaxed text-cream-200">
-                    Scan to open the same services on your device — this code points at the local
-                    prototype only.
+                    Scan to open the same experiences on your device — this code points at the
+                    local prototype only.
                   </p>
                 </div>
               </div>
@@ -85,9 +85,9 @@ export function KioskHome() {
       <section className="mx-auto max-w-[1400px] px-5 py-8 sm:px-8 sm:py-10">
         <div className="flex flex-wrap items-end justify-between gap-5 border-b border-cream-300 pb-5">
           <div>
-            <p className="eyebrow text-gold-600">Service directory</p>
+            <p className="eyebrow text-gold-600">Experiences</p>
             <h2 className="display mt-3 text-[clamp(1.6rem,3vw,2.2rem)] text-ink-900">
-              Everything, one touch away
+              Two ways to celebrate
             </h2>
           </div>
           <Link

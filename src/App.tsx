@@ -7,17 +7,8 @@ import { StaffLayout } from '@/layouts/StaffLayout';
 import { AdminLayout } from '@/layouts/AdminLayout';
 
 import { GuestHome } from '@/features/guest/GuestHome';
-import { FoodOrder } from '@/features/guest/FoodOrder';
 import { MusicRequests } from '@/features/guest/MusicRequests';
-import { HousekeepingRequests } from '@/features/guest/HousekeepingRequests';
-import { MaintenanceRequests } from '@/features/guest/MaintenanceRequests';
-import { ConciergeDesk } from '@/features/guest/ConciergeDesk';
-import { SpaBooking } from '@/features/guest/SpaBooking';
-import { TransportRequest } from '@/features/guest/TransportRequest';
-import { ReservationsPage } from '@/features/guest/ReservationsPage';
-import { OccasionRequests } from '@/features/guest/OccasionRequests';
-import { FeedbackForm } from '@/features/guest/FeedbackForm';
-import { BillingReview } from '@/features/guest/BillingReview';
+import { CelebrationEnquiry } from '@/features/guest/CelebrationEnquiry';
 import { MyRequests } from '@/features/guest/MyRequests';
 import { RequestDetail } from '@/features/guest/RequestDetail';
 
@@ -25,14 +16,19 @@ import { KioskHome } from '@/features/kiosk/KioskHome';
 import { KioskService } from '@/features/kiosk/KioskService';
 
 import { DepartmentRoute } from '@/features/departments/DepartmentRoute';
+import { StageDashboard } from '@/features/entertainment/StageDashboard';
+import { EventsDashboard } from '@/features/events/EventsDashboard';
 import { AdminDashboard } from '@/features/admin/AdminDashboard';
 import { NotFound } from '@/pages/NotFound';
 
 /**
  * Route map for the prototype.
  *
- * The three demo experiences are deliberately separated so a presenter can
- * frame each one on its own, while all of them share one request state.
+ * The guest journey is intentionally narrow: live music requests and the
+ * celebration enquiry form, both tracked in "My requests". The other hotel
+ * service modules (food, housekeeping, spa, …) remain in the codebase —
+ * including their dashboards, reachable by URL — but are no longer part of
+ * the guest journey or navigation.
  */
 export default function App() {
   useScrollToTop();
@@ -44,18 +40,9 @@ export default function App() {
       {/* 1 — Guest experience (QR / tablet) */}
       <Route element={<GuestLayout />}>
         <Route path="/guest" element={<GuestHome />} />
-        <Route path="/guest/food" element={<FoodOrder />} />
-        <Route path="/guest/room-service" element={<FoodOrder />} />
         <Route path="/guest/music" element={<MusicRequests />} />
-        <Route path="/guest/housekeeping" element={<HousekeepingRequests />} />
-        <Route path="/guest/maintenance" element={<MaintenanceRequests />} />
-        <Route path="/guest/concierge" element={<ConciergeDesk />} />
-        <Route path="/guest/spa" element={<SpaBooking />} />
-        <Route path="/guest/transport" element={<TransportRequest />} />
-        <Route path="/guest/reservations" element={<ReservationsPage />} />
-        <Route path="/guest/occasions" element={<OccasionRequests />} />
-        <Route path="/guest/feedback" element={<FeedbackForm />} />
-        <Route path="/guest/billing" element={<BillingReview />} />
+        <Route path="/guest/occasions" element={<CelebrationEnquiry />} />
+        <Route path="/guest/celebration" element={<Navigate to="/guest/occasions" replace />} />
         <Route path="/guest/my-requests" element={<MyRequests />} />
         <Route path="/guest/my-requests/:ref" element={<RequestDetail />} />
       </Route>
@@ -68,9 +55,11 @@ export default function App() {
         <Route path="/kiosk/:service" element={<KioskService />} />
       </Route>
 
-      {/* 3 — Department operations */}
+      {/* 3 — Staff operations: the two focus desks, then legacy department routes */}
       <Route element={<StaffLayout />}>
-        <Route path="/staff" element={<Navigate to="/staff/restaurant" replace />} />
+        <Route path="/staff" element={<Navigate to="/staff/entertainment" replace />} />
+        <Route path="/staff/entertainment" element={<StageDashboard />} />
+        <Route path="/staff/events" element={<EventsDashboard />} />
         <Route path="/staff/:department" element={<DepartmentRoute />} />
       </Route>
 

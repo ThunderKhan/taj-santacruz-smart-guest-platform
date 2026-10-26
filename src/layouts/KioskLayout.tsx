@@ -84,11 +84,11 @@ export function KioskLayout() {
             aria-current={atHome ? 'page' : undefined}
           >
             <House className="h-5 w-5" strokeWidth={1.7} />
-            Service home
+            Home
           </Link>
         </div>
         <p className="pb-2 text-center text-[11.5px] text-warm-500">
-          {location.label} · {location.detail} — touch any service to begin
+          {location.label} · {location.detail} — touch an experience to begin
         </p>
       </footer>
 
@@ -119,8 +119,8 @@ export function KioskLayout() {
         }
       >
         <p className="text-[14px] leading-relaxed text-warm-600">
-          This clears everything created at this tablet during the demonstration and restores the
-          starting queues for every department. {PROPERTY.name} service content is unchanged.
+          This clears everything created during the demonstration and restores the seeded song
+          requests and celebration enquiries. {PROPERTY.name} service content is unchanged.
         </p>
       </Modal>
     </div>

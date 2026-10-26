@@ -85,14 +85,22 @@ export function TextArea({
 
 export function SelectInput({
   invalid,
+  dark = false,
   className,
   children,
   ...rest
-}: SelectHTMLAttributes<HTMLSelectElement> & { invalid?: boolean }) {
+}: SelectHTMLAttributes<HTMLSelectElement> & { invalid?: boolean; dark?: boolean }) {
   return (
     <div className="relative">
       <select
-        className={cx(CONTROL, 'h-11 appearance-none pl-3.5 pr-9', invalid && 'border-clay-500', className)}
+        className={cx(
+          CONTROL,
+          'h-11 appearance-none pl-3.5 pr-9',
+          invalid && 'border-clay-500',
+          dark &&
+            'border-white/15 bg-ink-850 text-ivory-100 placeholder:text-warm-400 hover:border-white/25 focus:border-gold-500',
+          className,
+        )}
         {...rest}
       >
         {children}
@@ -100,7 +108,10 @@ export function SelectInput({
       <svg
         aria-hidden="true"
         viewBox="0 0 12 8"
-        className="pointer-events-none absolute right-3.5 top-1/2 h-2 w-3 -translate-y-1/2 fill-none stroke-warm-500 stroke-[1.5]"
+        className={cx(
+          'pointer-events-none absolute right-3.5 top-1/2 h-2 w-3 -translate-y-1/2 fill-none stroke-[1.5]',
+          dark ? 'stroke-warm-400' : 'stroke-warm-500',
+        )}
       >
         <path d="M1 1.5 6 6.5 11 1.5" />
       </svg>

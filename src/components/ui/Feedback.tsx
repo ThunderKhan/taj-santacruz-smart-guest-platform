@@ -137,11 +137,13 @@ export function SuccessPanel({
   reference,
   title,
   body,
+  eyebrow = 'Request submitted',
   children,
 }: {
   reference: string;
   title: string;
   body: string;
+  eyebrow?: string;
   children?: ReactNode;
 }) {
   return (
@@ -151,7 +153,7 @@ export function SuccessPanel({
           <path d="m5 12.5 4.5 4.5L19 7.5" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </div>
-      <p className="eyebrow text-sage-600">Request submitted</p>
+      <p className="eyebrow text-sage-600">{eyebrow}</p>
       <h3 className="display mt-3 text-[1.7rem] text-ink-900">{title}</h3>
       <p className="mx-auto mt-2.5 max-w-md text-[14px] leading-relaxed text-warm-600">{body}</p>
 

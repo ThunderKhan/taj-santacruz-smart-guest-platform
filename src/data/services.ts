@@ -16,8 +16,8 @@ export const SERVICES: ServiceDefinition[] = [
   },
   {
     id: 'music',
-    title: 'Live Music',
-    blurb: 'Request a song, vote for the queue, or send a dedication.',
+    title: 'Live Music Requests',
+    blurb: 'Request a song from the live set, add a dedication, and vote for the queue.',
     route: '/guest/music',
     icon: 'music',
     image: '/images/svc-music.jpg',
@@ -79,8 +79,8 @@ export const SERVICES: ServiceDefinition[] = [
   },
   {
     id: 'occasions',
-    title: 'Special Occasions',
-    blurb: 'Flowers, cakes and celebration arrangements.',
+    title: 'Plan Music for a Celebration',
+    blurb: 'Birthday, anniversary, party or corporate event — send the events team an enquiry.',
     route: '/guest/occasions',
     icon: 'gift',
     image: '/images/svc-occasions.jpg',
@@ -107,6 +107,17 @@ export const SERVICES: ServiceDefinition[] = [
 ];
 
 export const SERVICE_ORDER = SERVICES.map((service) => service.id);
+
+/**
+ * The two experiences this prototype now focuses on, in guest-facing order.
+ * Every other catalogue entry is retained in `SERVICES` (titles, labels and
+ * routing still resolve) but is hidden from the guest journey.
+ */
+export const FOCUS_SERVICE_IDS: ServiceId[] = ['music', 'occasions'];
+
+export const FOCUS_SERVICES: ServiceDefinition[] = FOCUS_SERVICE_IDS.map(
+  (id) => SERVICES.find((service) => service.id === id) as ServiceDefinition,
+);
 
 export function findService(id: ServiceId): ServiceDefinition {
   return SERVICES.find((service) => service.id === id) ?? SERVICES[0];

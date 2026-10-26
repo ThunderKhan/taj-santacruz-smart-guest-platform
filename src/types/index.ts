@@ -25,6 +25,7 @@ export type DepartmentId =
   | 'housekeeping'
   | 'maintenance'
   | 'entertainment'
+  | 'events'
   | 'concierge'
   | 'spa';
 
@@ -47,7 +48,9 @@ export type RequestStage =
   | 'ready'
   | 'queued'
   | 'playing'
-  | 'played';
+  | 'played'
+  /** Entertainment: accepted but deliberately held back for a later set. */
+  | 'deferred';
 
 export type Priority = 'low' | 'normal' | 'high' | 'urgent';
 
@@ -141,6 +144,8 @@ export interface ServiceRequest {
   votes?: number;
   /** Entertainment: whether the demo guest already voted. */
   guestVoted?: boolean;
+  /** Entertainment: dedications can be held back from the public queue view. */
+  dedicationHidden?: boolean;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -223,7 +228,17 @@ export interface Song {
   artist: string;
   genre: string;
   duration: string;
+  category: SongCategory;
 }
+
+/** Guest browsing categories shown on the live music screen. */
+export type SongCategory =
+  | 'bollywood'
+  | 'english-pop'
+  | 'romantic'
+  | 'jazz'
+  | 'classics'
+  | 'party';
 
 export interface SpaTreatment {
   id: string;
@@ -238,4 +253,88 @@ export interface TimeSlot {
   id: string;
   time: string;
   available: boolean;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Celebration enquiries                                                      */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Events / banquet enquiry workflow.
+ *
+ * Deliberately separate from the canonical request lifecycle: an enquiry is a
+ * sales conversation with its own states, not a task in an operations queue.
+ */
+export type EnquiryStatus =
+  | 'new'
+  | 'under_review'
+  | 'needs_info'
+  | 'proposal_sent'
+  | 'confirmed'
+  | 'closed';
+
+export interface EnquiryEvent {
+  status: EnquiryStatus;
+  at: number;
+  /** Actor label, e.g. "Events desk · S. Kapoor" or "Guest · Room 502". */
+  by: string;
+  note?: string;
+}
+
+/** Staff-only annotation attached to an enquiry. Never shown to guests. */
+export interface EnquiryNote {
+  id: string;
+  at: number;
+  by: string;
+  body: string;
+}
+
+export interface CelebrationEnquiry {
+  /** Internal stable id. */
+  id: string;
+  /** Guest-facing reference, e.g. "CEL-3301". */
+  ref: string;
+  occasion: string;
+  /** ISO calendar date, e.g. "2026-12-14". */
+  eventDate: string;
+  /** 24-hour clock start time, e.g. "19:30". */
+  startTime: string;
+  /** Approximate event duration in hours. */
+  durationHours: number;
+  guests: number;
+  venue: string;
+  entertainment: string;
+  genre: string;
+  /** Special requests, favourite songs, dedications, announcements. */
+  specialRequests: string;
+  /** Optional free-form notes from the guest. */
+  notes: string;
+  guestRef: string;
+  guestLabel: string;
+  location: string;
+  source: RequestSource;
+  status: EnquiryStatus;
+  submittedAt: number;
+  updatedAt: number;
+  assignedTo: string | null;
+  /** Display label of the sample package proposed to the guest, if any. */
+  proposedPackage: string | null;
+  internalNotes: EnquiryNote[];
+  history: EnquiryEvent[];
+  /** True for the seeded demonstration records. */
+  seeded: boolean;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Demo configuration                                                         */
+/* -------------------------------------------------------------------------- */
+
+/** Demo-only rules a performer can adjust from the stage dashboard. */
+export interface MusicRules {
+  /** Pause incoming song requests without closing the guest screen. */
+  paused: boolean;
+  /** Maximum open song requests per guest session. */
+  requestLimit: number;
+  /** Whether guests may vote on the approved queue. */
+  votingEnabled: boolean;
 }

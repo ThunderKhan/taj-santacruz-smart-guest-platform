@@ -49,7 +49,7 @@ export function ServiceShell({
             className="inline-flex items-center gap-1.5 text-[13px] font-medium text-warm-600 transition-colors hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-600"
           >
             <ArrowLeft className="h-4 w-4" strokeWidth={1.7} />
-            All services
+            Home
             <span aria-hidden="true" className="ml-1 text-warm-400">·</span>
             <span className="text-warm-500">{location.label}</span>
           </Link>

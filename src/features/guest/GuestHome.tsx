@@ -92,7 +92,7 @@ export function GuestHome() {
               href="#services"
               className="inline-flex h-[52px] items-center gap-2.5 rounded-[3px] bg-gold-500 px-7 text-[15px] font-semibold text-ink-950 shadow-lift transition-colors hover:bg-gold-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-300"
             >
-              Discover services
+              Explore the experiences
               <ArrowRight className="h-4 w-4" strokeWidth={2} />
             </a>
             <Link
@@ -115,15 +115,16 @@ export function GuestHome() {
       <section id="services" className="mx-auto max-w-[1320px] scroll-mt-24 px-4 pt-12 sm:px-6 sm:pt-16 lg:px-8">
         <div className="flex flex-wrap items-end justify-between gap-5 border-b border-cream-300 pb-6">
           <div className="max-w-xl">
-            <p className="eyebrow text-gold-600">Service directory</p>
+            <p className="eyebrow text-gold-600">The two experiences</p>
             <h2 className="display mt-3 text-[clamp(1.7rem,3.4vw,2.4rem)] text-ink-900">
-              Everything, one request away
+              Request a song tonight. Plan the celebration next.
             </h2>
             <div className="gold-hairline mt-4 max-w-[92px]" />
           </div>
           <p className="max-w-md text-[14px] leading-relaxed text-warm-600">
-            Choose a service and it is routed straight to the team responsible. You can follow
-            every request from submission to completion without calling the desk.
+            Song requests flow straight to the performer running the set, and celebration
+            enquiries land with the events team. Both stay tracked in one place, from
+            submission to the final note.
           </p>
         </div>
 

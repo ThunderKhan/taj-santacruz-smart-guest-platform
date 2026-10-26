@@ -14,5 +14,5 @@ export function useActiveDepartment(): DepartmentId {
   if (segment && (DEPARTMENT_IDS as string[]).includes(segment)) {
     return segment as DepartmentId;
   }
-  return 'restaurant';
+  return 'entertainment';
 }

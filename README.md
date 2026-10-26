@@ -1,17 +1,28 @@
-# Smart Hotel Guest Service Platform — concept prototype
+# Taj Santacruz — Live Music Requests & Celebration Enquiries (concept prototype)
 
-**Taj Santacruz, Mumbai · unofficial concept demonstration**
+**Unofficial concept demonstration · frontend only**
 
-A high-fidelity, fully interactive frontend prototype of a QR / in-room-tablet guest
-service platform: a guest raises a request, the request is routed automatically to
-the right department, six department dashboards work it through
-`Submitted → Accepted → In Progress → Completed`, and a management dashboard shows the
-impact — all three experiences sharing **one live request state**, with no refresh.
+A high-fidelity, fully interactive frontend prototype of two connected hotel
+experiences:
+
+1. **Live Music Requests** — a guest scans a QR code at their table, searches the
+   song catalogue, requests a track with an optional dedication, and votes for the
+   approved queue. A performer/DJ dashboard accepts, defers or rejects, manages the
+   running order, moderates dedications, and marks tracks `Playing → Played`.
+2. **Celebration Music & Entertainment Enquiries** — a guest submits a structured
+   celebration enquiry (occasion, date, timing, guests, venue, entertainment
+   preference, genre, special requests). The Events & Banquets dashboard works it
+   through `New → Under Review → Need More Information → Proposal Sent →
+   Confirmed / Closed` with assignment, internal notes and sample packages.
+
+Both experiences share **one live state** with the management dashboard and the
+presenter tools — status changes appear on every connected screen without a refresh.
 
 > **Disclosure.** Independent concept prototype prepared for demonstration.
-> Not affiliated with, endorsed by, or connected to Taj Hotels / Indian Hotels Company
-> Limited. No real guest data, payments, bookings, PMS, SMS, authentication or AI
-> services are used anywhere. All content is mock data persisted to `localStorage`.
+> Not affiliated with, endorsed by, or connected to Taj Hotels / Indian Hotels
+> Company Limited. No real guest data, payments, bookings, availability, PMS,
+> SMS, authentication or AI services are used anywhere. Everything is fictional
+> sample data persisted to `localStorage`.
 
 ---
 
@@ -23,6 +34,7 @@ npm run dev
 ```
 
 Then open the printed local URL (default <http://localhost:5173>).
+If port 5173 is busy, Vite picks the next free port (e.g. `5174`) and prints it.
 
 Other scripts:
 
@@ -41,45 +53,29 @@ Other scripts:
 
 | Route | What it shows |
 | --- | --- |
-| `/guest` | Guest home: hero, service directory, recent requests, demo QR |
-| `/guest/food` | In-room dining: sample menu, tray, review & send |
-| `/guest/music` | Live music: now playing, vote queue, catalogue search, dedications |
-| `/guest/housekeeping` | Towels/linen/amenities with quantity stepper, notes, urgency |
-| `/guest/maintenance` | Fault categories, severity, description → engineering ticket |
-| `/guest/concierge` | Quick answers, Mumbai recommendations, message to the desk |
-| `/guest/spa` | Treatments, time slots, therapist preference |
-| `/guest/transport` | Vehicle options, pickup/destination, timing, party size |
-| `/guest/reservations` | Tables, events & activities (dining routes to the restaurant) |
-| `/guest/occasions` | Celebration packages, setting, timing, note |
-| `/guest/feedback` | Compliment vs concern (concerns route with high priority) |
-| `/guest/billing` | Sample folio review — **no payment flow exists** |
-| `/guest/my-requests` | Live list of this session's requests with filters |
-| `/guest/my-requests/:ref` | Full timeline, detail, cancel action |
+| `/guest` | Guest home: the two focus experiences + shortcut to My requests |
+| `/guest/music` | **Feature A**: categories, search, now playing, approved queue + votes, QR card, your-requests status strip, pause / limit / declined notices |
+| `/guest/occasions` | **Feature B**: celebration enquiry form (alias: `/guest/celebration` → redirects here) |
+| `/guest/my-requests` | Live list of this session's song requests **and** celebration enquiries |
+| `/guest/my-requests/:ref` | Full timeline and detail — **read-only for guests** (no status controls) |
 
 ### 2 — Hotel tablet / kiosk
 
 | Route | What it shows |
 | --- | --- |
-| `/kiosk` | Tablet home: large touch targets, persistent Back / Service home |
-| `/kiosk/:service` | The *same* service modules as `/guest/*`, in tablet chrome |
-| `/kiosk/my-requests` | Tablet-mode request list (self-contained, never leaves the kiosk) |
-| `/kiosk/my-requests/:ref` | Tablet-mode request timeline |
+| `/kiosk` | Tablet home with the same two experiences |
+| `/kiosk/music`, `/kiosk/occasions` | The *same* guest modules in tablet chrome |
+| `/kiosk/:service` | Any other service reports "Service not available" (gate) |
+| `/kiosk/my-requests`, `/kiosk/my-requests/:ref` | Tablet-mode request list / timeline |
 
-### 3 — Department operations
+### 3 — Staff dashboards
 
 | Route | What it shows |
 | --- | --- |
-| `/staff` | Redirects to `/staff/restaurant` |
-| `/staff/restaurant` | Kitchen pass board (new / acknowledged / preparing / served) + reservations |
-| `/staff/housekeeping` | Floor board, room status, attendant workload |
-| `/staff/maintenance` | Priority triage, fault categories, asset watchlist |
-| `/staff/entertainment` | Stage strip, vote leaderboard, approval backlog |
-| `/staff/concierge` | Transport board, guest-relations follow-ups, workstream counts |
-| `/staff/spa` | Today's schedule, therapist workload, treatment mix |
-
-All six share one operational frame (header, live KPIs, filterable queue, detail
-drawer with Accept / Start / Complete / Decline + assignment) and then add their own
-department-specific panel.
+| `/staff` | Redirects to `/staff/entertainment` |
+| `/staff/entertainment` | **Live Music Desk (performer/DJ console)**: incoming, approved, deferred, on-stage, votable queue, played history, dedication moderation, demo rules |
+| `/staff/events` | **Events & Banquets**: enquiry pipeline, search/filter (occasion, date window, entertainment, status), detail drawer with workflow, assignment, sample packages, internal notes, status history |
+| `/staff/:department` | The five retained legacy dashboards (restaurant, housekeeping, maintenance, concierge, spa) still render by URL — hidden from the nav rail |
 
 ### 4 — Management
 
@@ -93,17 +89,60 @@ department-specific panel.
 
 ---
 
-## The scripted demo (Room 502 · two towels)
+## The two workflows
 
-1. Open `/guest/housekeeping` (location defaults to **Room 502**).
-2. Keep **Bath towels × 2**, optionally add a note, press **Send request**.
-3. From the presenter ribbon switch to **Operations → Housekeeping**.
-4. Open the new `TSH-…` ticket → **Accept request** → **Start work** → **Mark complete**.
-5. Switch back to the guest experience: the confirmation screen, My Requests and the
-   request timeline all update instantly — no refresh — and `/admin` KPIs/charts move with it.
+### Feature A — Live Music Requests (guest → performer)
 
-Seeded scenarios also cover a restaurant order, a song request with votes, an urgent
-maintenance issue, an airport transfer, a guest concern and a spa booking.
+1. On `/guest/music`, browse by category (**Bollywood, English Pop, Romantic,
+   Jazz, Classics, Party Music**) or search by title, artist or genre.
+2. Choose a track, optionally write a dedication, press **Send request** →
+   you get a `TSH-…` reference and the status **Submitted**.
+   *Demo rules apply: max 2 open requests per guest, and the performer can pause
+   incoming requests — the screen explains this when it blocks you.*
+3. Switch (presenter ribbon) to **Staff dashboards → Live Music Desk**.
+4. Accept / Defer / Reject the incoming request, then **Add to queue** → the
+   guest sees **Queued** and the track appears in the public vote queue.
+5. **Play now** (disabled while another track plays) → **Playing**;
+   **Mark as played** → **Played**. The guest's screen and My requests update live.
+6. Dedications are visible to staff with a **Hold / Approve** toggle; a held
+   dedication shows as "held for review" on the public queue while the guest
+   keeps their own text.
+
+Status vocabulary (staff-managed only): `Submitted → Accepted → Queued → Playing →
+Played`, plus `Rejected` (guest-facing explanation) and `Deferred` (accepted, held).
+
+### Feature B — Celebration Enquiries (guest → events desk)
+
+1. On `/guest/occasions` fill in occasion, date + start time, duration, guest
+   count, venue, entertainment preference (singer / band / DJ / instrumental /
+   background), genre, special requests, notes → **Send the enquiry**.
+2. Validation runs inline; on success you receive a `CEL-…` reference, a
+   confirmation with the disclaimer **"an enquiry is not a booking"**, and a live
+   status card with its own timeline.
+3. Open **Staff dashboards → Events & Banquets**: the enquiry appears as **New**.
+   Search/filter by occasion, event date window, entertainment preference or
+   workflow status; open the drawer.
+4. In the drawer: assign a colleague, add internal notes (staff-only), attach a
+   **sample package** (indicative figures), and advance the workflow:
+   `New → Under Review → Need More Information → Proposal Sent → Confirmed / Closed`.
+5. The guest sees every status change in My requests / on their confirmation
+   screen — confirmed and closed are end states, and "Confirmed" is explicitly
+   labelled a simulation (no signed proposal, deposit or calendar hold exists).
+
+---
+
+## What is working, simulated, hidden or future work
+
+| Area | State |
+| --- | --- |
+| Both workflows above, guest ↔ staff, live shared state, `localStorage` persistence (v2) | **Working** (frontend only) |
+| Voting, request limits, pause, dedication hold/approve, workflow transitions, assignment, internal notes, sample packages | **Working** (demo rules on shared local state) |
+| Presenter ribbon switcher, kiosk mode, reset controls, management dashboard | **Working** |
+| Staff authentication / role-based permissions | **Simulated only** — no auth exists; staff access is explicitly labelled as demonstration |
+| Restaurant, housekeeping, maintenance, concierge, spa dashboards + their guest service forms | **Retained but hidden** — removed from guest navigation and the staff rail; routes still resolve by URL (`/guest/spa`, `/staff/housekeeping`, …) and their modules remain in the codebase for reuse |
+| Availability checks, pricing, quotations, booking confirmation | **Never claimed** — packages are sample data with indicative INR figures; no availability is ever displayed |
+| Production backend · payments · PMS/channel integrations · SMS/email/push · real data · API keys · AI services | **Out of scope by design** — would be the production integration phase |
+| Real audio streaming / song licensing | **Not present** — metadata only, stated in the UI |
 
 ---
 
@@ -113,86 +152,86 @@ maintenance issue, an airport transfer, a guest concern and a spa booking.
 src/
 ├── App.tsx                 Route map for all four experiences
 ├── main.tsx                Router + provider + toaster
-├── types/                  Shared domain types (ServiceRequest, statuses, …)
-├── data/                   Mock data layer: property, departments, services, menu,
-│                           music, spa, guest-services, history (sample series),
-│                           requests (28 seeded demo records)
+├── types/                  Shared domain types (ServiceRequest, CelebrationEnquiry, …)
+├── data/                   Mock data: property, departments, services, music catalogue,
+│                           celebrations (packages + enquiry seeds), requests (seeds)
 ├── services/
-│   ├── routing.ts          Configurable service→department routing rules (13)
-│   └── requestEngine.ts    buildRequest / canTransition / applyTransition / labels
-├── store/RequestsProvider  Reducer + context: single source of truth, localStorage
-│                           persistence (v1), re-anchoring, toasts, notifications
-├── hooks/                  useDepartmentQueue, useActiveDepartment, useHomePath,
-│                           useServicePath, useRibbonOffset, useScrollToTop
+│   ├── routing.ts          Configurable service→department routing rules
+│   ├── requestEngine.ts    buildRequest / canTransition / applyTransition / labels
+│   └── enquiryEngine.ts    enquiry workflow: transitions, actions, labels, references
+├── store/RequestsProvider  Reducer + context: requests, enquiries, demo music rules,
+│                           notifications, toasts, localStorage persistence (v2)
+├── hooks/                  useDepartmentQueue, useActiveDepartment, useHomePath, …
 ├── components/             Brand, imagery, QR, bell, ribbon, location switcher
-│   └── ui/                 Button, Badge, Panel, Field, Overlay, Timeline,
-│                           Feedback, Toaster
+│   └── ui/                 Button, Badge (Status/Enquiry), Panel, Field, Overlay,
+│                           Timeline (Request/Enquiry), Feedback, Toaster
 ├── layouts/                GuestLayout, KioskLayout, StaffLayout, AdminLayout
 ├── features/
-│   ├── guest/              13 service modules + home, catalogue, success, detail
-│   ├── kiosk/              KioskHome, KioskService (reuses guest modules)
-│   ├── departments/        DepartmentRoute + six DepartmentPanels
+│   ├── guest/              MusicRequests, CelebrationEnquiry, MyRequests, home, catalogue
+│   ├── kiosk/              KioskHome, KioskService (reuses guest modules, focus-gated)
+│   ├── entertainment/      StageDashboard (performer/DJ console)
+│   ├── events/             EventsDashboard + EnquiryDrawer
+│   ├── departments/        DepartmentRoute + department-specific panels (retained)
 │   └── admin/              AdminDashboard (Recharts)
 └── pages/NotFound.tsx
 ```
 
-**State model.** Every guest submission goes through `buildRequest()` (routing,
-reference numbering, history), and every status change goes through a forward-only
-transition guard: `Submitted → Accepted → In Progress → Completed`, plus `Rejected`
-and `Cancelled`. Departments may display finer wording through the `stage` field
-("Preparing", "Ready", "In the queue", "Now playing") without breaking the canonical
-model.
+**State model.** Guest submissions go through `buildRequest()`; enquiries through
+`buildEnquiry()`. Request statuses are forward-only with a `stage` field for
+department wording (`queued`, `playing`, `played`, `deferred`, `preparing`, …).
+Enquiries have their own engine (`enquiryEngine.ts`) because their lifecycle and
+actor vocabulary differ from hotel requests. One localStorage key
+(`smart-guest-platform:v1`, `STATE_VERSION = 2`) holds both slices plus the demo
+music rules; seed timestamps re-anchor after 14 idle hours. Reset controls
+(ribbon, kiosk restart, footer) restore the seeded state.
 
-**Persistence.** State is written to `localStorage` under `smart-guest-platform:v1`.
-Seed timestamps re-anchor uniformly if the prototype has been idle for more than 14
-hours, so relative ages always look sensible. A **Reset** control (presenter ribbon,
-kiosk restart, footer) restores the seeded state.
-
-**Presenter ribbon.** A discreet, collapsible bar at the top of every screen carries
-the prototype disclosure, the Guest / Operations / Management switcher, tablet mode
-and the reset control. Layouts compensate for it via `useRibbonOffset()`.
+**Presenter ribbon.** A discreet, collapsible bar carries the prototype
+disclosure, the Guest / Staff / Management switcher, tablet mode and reset.
+Layouts compensate via `useRibbonOffset()`.
 
 ---
 
 ## Design system
 
-- **Palette:** midnight navy/charcoal (`ink-*`), warm ivory/cream (`ivory-*`, `cream-*`),
-  champagne gold/brass (`gold-*`, `brass-*`), muted sage (`sage-*`, `forest-*`),
-  warm grey (`warm-*`). No neon, gradients-as-decoration or glassmorphism.
+- **Palette:** midnight navy (`ink-*`), warm ivory/cream (`ivory-*`, `cream-*`),
+  champagne gold (`gold-*`), muted sage (`sage-*`), warm grey (`warm-*`).
+  No neon, no decorative gradients, no glassmorphism.
 - **Type:** Cormorant Garamond for display, Inter for UI (with system fallbacks).
-- **Surfaces:** Guest = ivory + serif + gold; Staff = midnight navy console;
-  Management = light with a dark navy header.
-- **Photography:** 39 curated hospitality images in `public/images/`, all with an
-  art-directed fallback surface if a file is missing (`ImageWithFallback`).
-- **Motion:** restrained, with a full `prefers-reduced-motion` override.
-- **Accessibility:** focus-visible outlines, labelled controls, dialog focus handling,
-  `aria-pressed` / `aria-expanded` states, keyboard-operable overlays (Esc to close).
+- **Surfaces:** Guest = ivory + serif + gold, mobile-first; Staff = midnight navy
+  console, desktop-first; Management = light with a dark navy header.
+- **States:** every screen provides loading/empty/success/validation/error
+  treatments (`EmptyState`, `Notice`, `SuccessPanel`, inline field errors).
+- **Accessibility:** focus-visible outlines, labelled controls, dialog focus
+  handling, `aria-pressed` states, keyboard-operable overlays (Esc to close).
 
 ---
 
-## Not included (by design)
+## Verification status (this refactor)
 
-Production backend · payments · real PMS/channel integrations · authentication or
-role-based authorisation · SMS/email/push · real availability or pricing · AI keys ·
-real guest or staff data. Staff access in the prototype is explicitly simulated and
-labelled as such.
-
----
-
-## Verification status
-
-- `npx tsc -b` — passes with strict options (`noUnusedLocals`, `noUnusedParameters`,
-  `verbatimModuleSyntax`).
+- `npx tsc -b` — passes with strict options (`noUnusedLocals`,
+  `noUnusedParameters`, `verbatimModuleSyntax`).
 - `npm run build` — passes (vendor/charts/icons split into separate chunks).
-- Flows verified in-browser: guest submission → department status changes → guest
-  timeline/KPI updates without refresh, across guest, kiosk, department and
-  management views; responsive layouts checked at phone/tablet/desktop widths; image
-  fallbacks exercised.
-- Kiosk links verified self-contained: every tile, cross-link and "Track this
-  request" stays on `/kiosk/*` routes (tablet chrome is never dropped mid-flow).
-- Lighthouse (dev-server, desktop): **accessibility 1.00, best practices 1.00,
-  SEO 1.00** on `/guest`; a custom WCAG contrast sweep over the live DOM
-  (including dark ink surfaces and the photo-overlay hero worst case) reports zero
-  failing text on `/guest`, `/kiosk`, `/admin` and `/staff/*`.
-- `public/robots.txt` noindexes the prototype; the wordmark link is named by its
-  visible content (no `aria-label` override).
+- Browser end-to-end, both workflows verified on the dev server:
+  - **Feature A:** search → category filter → request with dedication →
+    `Submitted` on the guest screen → Accept → Add to queue (`Queued`) →
+    Play now (disabled while another track plays) → Mark as played (`Played`) →
+    guest sees `Played` in My requests, all without refresh.
+  - **Feature B:** form → empty-submit validation (all 7 field errors) → filled
+    submission → `CEL-3300` reference + confirmation + disclaimers → events
+    dashboard → drawer: assignment, internal note, sample package →
+    `New → Under Review → Proposal Sent` → guest sees the update live.
+  - Guests cannot change statuses: the request detail page has no
+    cancel/accept/complete controls and states that statuses belong to staff.
+  - Kiosk gate: `/kiosk/housekeeping` reports "Service not available";
+    `/kiosk/occasions` renders the enquiry form.
+  - Legacy dashboards still render by URL (`/staff/housekeeping`) while the rail
+    shows only the two focus desks; `/staff` redirects to the Live Music Desk.
+  - Demo rules: pausing requests on the stage desk blocks guest submissions with
+    an on-page notice; voting increments/decrements correctly.
+  - No horizontal overflow at 800px on `/guest`, `/guest/music`,
+    `/guest/occasions`, `/guest/my-requests`, `/staff/entertainment`,
+    `/staff/events`.
+- `public/robots.txt` noindexes the prototype.
+
+See `PROTOTYPE_REPORT.md` for the full report: changed files, retained/hidden
+services, limitations and the demo script.

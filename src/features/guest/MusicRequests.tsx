@@ -1,79 +1,116 @@
 import { useMemo, useState } from 'react';
-import { Check, Heart, ListMusic, Play, Search, ThumbsUp, Users } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Check, Heart, ListMusic, Play, ScanLine, Search, ThumbsUp, TriangleAlert, Users } from 'lucide-react';
 import { useRequests } from '@/store/RequestsProvider';
-import { NOW_PLAYING, PERFORMER, SONG_CATALOGUE } from '@/data/music';
-import { Button } from '@/components/ui/Button';
-import { Panel, SectionHeading } from '@/components/ui/Panel';
-import { SearchInput, TextArea } from '@/components/ui/Field';
-import { Badge } from '@/components/ui/Badge';
-import { Notice, EmptyState } from '@/components/ui/Feedback';
+import { useHomePath } from '@/hooks/useHomePath';
 import { ServiceShell } from './ServiceShell';
 import { RequestSuccess } from './RequestSuccess';
-import { relativeTime } from '@/utils/format';
+import { Button } from '@/components/ui/Button';
+import { Badge, StatusBadge } from '@/components/ui/Badge';
+import { Panel, SectionHeading } from '@/components/ui/Panel';
+import { ChoiceChip, SearchInput, TextArea } from '@/components/ui/Field';
+import { EmptyState, Notice } from '@/components/ui/Feedback';
+import { DemoQRCode } from '@/components/DemoQRCode';
+import { NOW_PLAYING, PERFORMER, SONG_CATALOGUE, SONG_CATEGORIES } from '@/data/music';
 import { isTerminal, statusLabel } from '@/services/requestEngine';
-import type { Song } from '@/types';
+import type { Song, SongCategory } from '@/types';
+import { relativeTime } from '@/utils/format';
 
 /**
- * Live music requests: search the set catalogue, add a dedication, vote for
- * tracks already in the queue, and see requests move through the entertainment
- * dashboard without refreshing.
+ * Live music & song requests — the guest half of Feature A.
+ *
+ * Guests browse the catalogue by category or search, request a track with an
+ * optional dedication, and vote on the approved queue. Statuses are read-only
+ * for guests: submitted, accepted, queued, playing, played and rejected are all
+ * managed exclusively from the performer's stage dashboard.
  */
 export function MusicRequests() {
-  const { requests, session, createRequest, toggleVote } = useRequests();
+  const { requests, session, createRequest, toggleVote, musicRules } = useRequests();
+  const homePath = useHomePath();
   const [query, setQuery] = useState('');
+  const [category, setCategory] = useState<SongCategory | 'all'>('all');
   const [selected, setSelected] = useState<Song | null>(null);
   const [dedication, setDedication] = useState('');
   const [placedRef, setPlacedRef] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const myOpenSongRequests = useMemo(
-    () =>
-      requests.filter(
-        (request) =>
-          request.service === 'music' &&
-          request.guestRef === session.guestRef &&
-          !isTerminal(request.status),
-      ),
-    [requests, session.guestRef],
+  const musicRequests = useMemo(
+    () => requests.filter((request) => request.service === 'music'),
+    [requests],
   );
 
+  const myRequests = useMemo(
+    () =>
+      musicRequests
+        .filter((request) => request.guestRef === session.guestRef)
+        .sort((a, b) => b.updatedAt - a.updatedAt),
+    [musicRequests, session.guestRef],
+  );
+
+  const myOpenCount = myRequests.filter((request) => !isTerminal(request.status)).length;
+  const myDeclined = myRequests.filter((request) => request.status === 'rejected');
+
+  /** The approved, votable running order. */
   const queue = useMemo(
     () =>
-      requests
-        .filter((request) => request.service === 'music' && !isTerminal(request.status))
+      musicRequests
+        .filter((request) => request.status === 'in_progress' && request.stage === 'queued')
         .sort((a, b) => (b.votes ?? 0) - (a.votes ?? 0)),
-    [requests],
+    [musicRequests],
+  );
+
+  const liveNowPlaying = useMemo(
+    () => musicRequests.find((request) => request.status === 'in_progress' && request.stage === 'playing') ?? null,
+    [musicRequests],
   );
 
   const played = useMemo(
     () =>
-      requests
-        .filter((request) => request.service === 'music' && request.status === 'completed')
+      musicRequests
+        .filter((request) => request.status === 'completed')
         .sort((a, b) => b.updatedAt - a.updatedAt)
-        .slice(0, 4),
-    [requests],
+        .slice(0, 5),
+    [musicRequests],
   );
 
   const results = useMemo(() => {
     const needle = query.trim().toLowerCase();
-    if (!needle) return SONG_CATALOGUE.slice(0, 6);
-    return SONG_CATALOGUE.filter(
-      (song) =>
+    return SONG_CATALOGUE.filter((song) => {
+      const inCategory = category === 'all' || song.category === category;
+      if (!inCategory) return false;
+      if (!needle) return true;
+      return (
         song.title.toLowerCase().includes(needle) ||
         song.artist.toLowerCase().includes(needle) ||
-        song.genre.toLowerCase().includes(needle),
-    ).slice(0, 8);
-  }, [query]);
+        song.genre.toLowerCase().includes(needle)
+      );
+    }).slice(0, 8);
+  }, [query, category]);
 
-  /** Duplicate blocking: one live request per track per guest session. */
+  /** Duplicate blocking: one open request per track per guest session. */
   const alreadyRequested = (song: Song) =>
-    myOpenSongRequests.some((request) => request.meta.Track === song.title);
+    myRequests.some(
+      (request) =>
+        request.meta.Track === song.title && !isTerminal(request.status),
+    );
+
+  /** Demo rules, enforced on the guest screen (server rules would live in production). */
+  const blockedReason = musicRules.paused
+    ? 'New song requests are paused while the performer resets the set. You can still browse and vote.'
+    : myOpenCount >= musicRules.requestLimit
+      ? `You already have ${myOpenCount} open request${myOpenCount === 1 ? '' : 's'} — the demo limit is ${musicRules.requestLimit} per guest.`
+      : null;
 
   const submitRequest = () => {
     if (!selected) return;
+    if (blockedReason) {
+      setSubmitError(blockedReason);
+      return;
+    }
     const request = createRequest({
       service: 'music',
       title: `Song request — ${selected.title}`,
-      description: 'Requested from the guest music screen.',
+      description: `Requested from the ${PERFORMER.venue} guest music screen.`,
       guestNote: dedication.trim() || undefined,
       votes: 1,
       meta: {
@@ -86,8 +123,28 @@ export function MusicRequests() {
     setDedication('');
     setSelected(null);
     setQuery('');
+    setSubmitError(null);
     setPlacedRef(request.ref);
   };
+
+  const handleVote = (id: string) => {
+    if (!musicRules.votingEnabled) return;
+    toggleVote(id);
+  };
+
+  const nowPlaying = liveNowPlaying
+    ? {
+        title: liveNowPlaying.meta.Track ?? liveNowPlaying.title,
+        artist: liveNowPlaying.meta.Artist ?? PERFORMER.name,
+        genre: liveNowPlaying.meta.Genre ?? '',
+        duration: '',
+      }
+    : NOW_PLAYING;
+
+  const qrValue = useMemo(() => {
+    const origin = typeof window === 'undefined' ? '' : window.location.origin;
+    return `${origin}/guest/music`;
+  }, []);
 
   if (placedRef) {
     return (
@@ -102,26 +159,55 @@ export function MusicRequests() {
   return (
     <ServiceShell
       eyebrow={PERFORMER.name}
-      title="Live music & song requests"
-      description={`${PERFORMER.role}. ${PERFORMER.setNote}. Request a track, add a dedication, or vote for what the ensemble plays next — no audio is streamed in this prototype, song metadata only.`}
+      title="Live music requests"
+      description={`${PERFORMER.role}. ${PERFORMER.setNote}. Request a track, add a dedication, or vote for the approved queue — no audio is streamed in this prototype, song metadata only.`}
     >
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
         <div>
-          {/* Now playing */}
+          {/* ---------------------------------------------------------- Rules */}
+          {musicRules.paused ? (
+            <Notice tone="clay" title="Requests are paused" className="mb-5">
+              <p>
+                The performer has paused incoming requests while resetting the set. Voting and
+                browsing stay open — try again shortly.
+              </p>
+            </Notice>
+          ) : null}
+
+          {blockedReason && !musicRules.paused ? (
+            <Notice tone="clay" title="Request limit reached" className="mb-5">
+              <p>{blockedReason}</p>
+            </Notice>
+          ) : null}
+
+          {myDeclined.length > 0 ? (
+            <Notice tone="gold" title="Some requests were declined" className="mb-5">
+              <p>
+                {myDeclined.length === 1
+                  ? 'One of your requests was politely declined'
+                  : `${myDeclined.length} of your requests were politely declined`}
+                {' — '}usually because the track sits outside the planned set. You are welcome to
+                request something else, and the performer’s note is in each request’s detail.
+              </p>
+            </Notice>
+          ) : null}
+
+          {/* ----------------------------------------------------- Now playing */}
           <div className="relative isolate overflow-hidden rounded-[4px] border border-ink-800 bg-ink-950">
-            <div
-              aria-hidden="true"
-              className="absolute inset-y-0 right-0 w-1/2 bg-gradient-to-l from-gold-500/12 to-transparent"
-            />
             <div className="relative flex flex-wrap items-center gap-5 p-5 sm:p-6">
               <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-gold-500/40 bg-gold-500/15 text-gold-300">
                 <Play className="h-5 w-5" strokeWidth={1.7} />
               </span>
               <div className="min-w-0">
-                <p className="eyebrow text-gold-400">Now playing · {PERFORMER.venue}</p>
-                <p className="display mt-2 truncate text-[1.6rem] text-ivory-50">{NOW_PLAYING.title}</p>
+                <p className="eyebrow flex flex-wrap items-center gap-2.5 text-gold-400">
+                  Now playing · {PERFORMER.venue}
+                  <StatusBadge status="in_progress" stage="playing" dark />
+                </p>
+                <p className="display mt-2 truncate text-[1.6rem] text-ivory-50">{nowPlaying.title}</p>
                 <p className="mt-1 text-[13.5px] text-warm-400">
-                  {NOW_PLAYING.artist} · {NOW_PLAYING.genre} · {NOW_PLAYING.duration}
+                  {nowPlaying.artist}
+                  {nowPlaying.genre ? ` · ${nowPlaying.genre}` : ''}
+                  {nowPlaying.duration ? ` · ${nowPlaying.duration}` : ''}
                 </p>
               </div>
               <div className="ml-auto hidden text-right sm:block">
@@ -131,12 +217,48 @@ export function MusicRequests() {
             </div>
           </div>
 
-          {/* Queue */}
+          {/* --------------------------------------------------- Your requests */}
+          {myRequests.length > 0 ? (
+            <div className="mt-7">
+              <SectionHeading
+                eyebrow="Your requests"
+                title="How your tracks are doing"
+                description="Statuses update live from the stage desk — this screen never changes them."
+              />
+              <ul className="mt-4 divide-y divide-cream-300 rounded-[4px] border border-cream-300 bg-white shadow-hairline">
+                {myRequests.slice(0, 6).map((request) => (
+                  <li key={request.id}>
+                    <Link
+                      to={`${homePath}/my-requests/${request.ref}`}
+                      className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 transition-colors hover:bg-warm-50 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-gold-600 sm:px-5"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-[14.5px] font-medium text-ink-900">
+                          {request.meta.Track ?? request.title}
+                        </p>
+                        <p className="mt-0.5 text-[12.5px] text-warm-500">
+                          {request.ref} · {relativeTime(request.updatedAt)}
+                          {request.guestNote ? ' · dedication' : ''}
+                        </p>
+                      </div>
+                      <StatusBadge status={request.status} stage={request.stage} />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+
+          {/* ----------------------------------------------------------- Queue */}
           <div className="mt-7">
             <SectionHeading
               eyebrow="Audience queue"
               title="What the room is asking for"
-              description="Votes are shared across every guest screen and the entertainment dashboard."
+              description={
+                musicRules.votingEnabled
+                  ? 'Only approved tracks appear here. Votes are shared across every guest screen and the stage dashboard.'
+                  : 'Only approved tracks appear here. Voting is paused for this set — the performer is curating the running order.'
+              }
               action={
                 <span className="chip">
                   <Users className="h-3.5 w-3.5" strokeWidth={1.7} />
@@ -150,7 +272,7 @@ export function MusicRequests() {
                 <EmptyState
                   icon={<ListMusic className="h-5 w-5" strokeWidth={1.5} />}
                   title="The queue is open"
-                  body="No live requests right now — be the first to request a track below."
+                  body="No approved requests right now — be the first to request a track below."
                 />
               </Panel>
             ) : (
@@ -172,30 +294,32 @@ export function MusicRequests() {
                         </p>
                         <p className="mt-0.5 text-[12.5px] text-warm-500">
                           {request.meta.Artist} · {request.location}
-                          {request.guestNote ? ' · dedication' : ''}
+                          {request.guestNote
+                            ? request.dedicationHidden
+                              ? ' · dedication held for review'
+                              : ' · dedication'
+                            : ''}
                         </p>
                       </div>
 
-                      <Badge
-                        tone={
-                          request.status === 'in_progress'
-                            ? 'gold'
-                            : request.status === 'submitted'
-                              ? 'brass'
-                              : 'ink'
-                        }
-                      >
-                        {statusLabel({ status: request.status, stage: request.stage })}
-                      </Badge>
+                      <StatusBadge status={request.status} stage={request.stage} />
 
                       <button
                         type="button"
-                        onClick={() => toggleVote(request.id)}
+                        onClick={() => handleVote(request.id)}
                         aria-pressed={voted}
+                        disabled={!musicRules.votingEnabled}
+                        title={
+                          musicRules.votingEnabled
+                            ? voted
+                              ? 'Remove your vote'
+                              : 'Vote for this track'
+                            : 'Voting is paused for this set'
+                        }
                         className={
                           voted
-                            ? 'inline-flex h-9 items-center gap-1.5 rounded-full border border-gold-600 bg-gold-200/60 px-3.5 text-[13px] font-semibold text-gold-700 transition-colors'
-                            : 'inline-flex h-9 items-center gap-1.5 rounded-full border border-warm-300 bg-white px-3.5 text-[13px] font-medium text-warm-700 transition-colors hover:border-warm-400 hover:text-ink-900'
+                            ? 'inline-flex h-9 items-center gap-1.5 rounded-full border border-gold-600 bg-gold-200/60 px-3.5 text-[13px] font-semibold text-gold-700 transition-colors disabled:cursor-not-allowed disabled:opacity-45'
+                            : 'inline-flex h-9 items-center gap-1.5 rounded-full border border-warm-300 bg-white px-3.5 text-[13px] font-medium text-warm-700 transition-colors hover:border-warm-400 hover:text-ink-900 disabled:cursor-not-allowed disabled:opacity-45'
                         }
                       >
                         <ThumbsUp className="h-3.5 w-3.5" strokeWidth={1.8} />
@@ -209,13 +333,28 @@ export function MusicRequests() {
             )}
           </div>
 
-          {/* Search */}
+          {/* ---------------------------------------------------------- Search */}
           <div className="mt-7">
             <SectionHeading
               eyebrow="Request a track"
               title="Search the catalogue"
-              description="Dedicated tracks are read by the ensemble before the set."
+              description="Dedications are read by the team before the set — only approved ones are shared."
             />
+
+            <div className="mt-4 flex flex-wrap gap-2">
+              <ChoiceChip selected={category === 'all'} onClick={() => setCategory('all')}>
+                All
+              </ChoiceChip>
+              {SONG_CATEGORIES.map((entry) => (
+                <ChoiceChip
+                  key={entry.id}
+                  selected={category === entry.id}
+                  onClick={() => setCategory(entry.id)}
+                >
+                  {entry.label}
+                </ChoiceChip>
+              ))}
+            </div>
 
             <div className="mt-4 max-w-md">
               <SearchInput
@@ -232,7 +371,7 @@ export function MusicRequests() {
                     compact
                     icon={<Search className="h-5 w-5" strokeWidth={1.5} />}
                     title="No matches"
-                    body="Try an artist name, or a genre such as jazz, upbeat or slow."
+                    body="Try another artist, or switch categories — the catalogue is curated, so some favourites may not be listed."
                   />
                 </li>
               ) : (
@@ -267,6 +406,7 @@ export function MusicRequests() {
                           variant="outline"
                           size="sm"
                           onClick={() => setSelected(song)}
+                          disabled={Boolean(blockedReason)}
                         >
                           Choose
                         </Button>
@@ -298,23 +438,57 @@ export function MusicRequests() {
                   </p>
                 </div>
 
+                {submitError ? (
+                  <Notice tone="clay" title="Request not sent" className="mt-4">
+                    <p>{submitError}</p>
+                  </Notice>
+                ) : null}
+
                 <div className="mt-4 flex flex-wrap items-center gap-3">
-                  <Button variant="gold" onClick={submitRequest}>
+                  <Button
+                    variant="gold"
+                    onClick={submitRequest}
+                    disabled={Boolean(blockedReason)}
+                    aria-describedby={blockedReason ? 'music-blocked-reason' : undefined}
+                  >
                     <Heart className="h-4 w-4" strokeWidth={1.7} />
                     Send request
                   </Button>
                   <Button variant="ghost" onClick={() => setSelected(null)}>
                     Cancel
                   </Button>
+                  {blockedReason ? (
+                    <p id="music-blocked-reason" className="text-[13px] text-clay-600">
+                      <TriangleAlert className="mr-1 inline h-3.5 w-3.5" strokeWidth={1.8} />
+                      {blockedReason}
+                    </p>
+                  ) : null}
                 </div>
               </Panel>
             ) : null}
           </div>
         </div>
 
-        {/* Sidebar */}
+        {/* ---------------------------------------------------------- Sidebar */}
         <div className="lg:sticky lg:top-32 lg:self-start">
           <Panel dark>
+            <p className="eyebrow text-gold-400">
+              <ScanLine className="mr-1.5 inline h-3.5 w-3.5" strokeWidth={1.7} />
+              QR entry · {PERFORMER.venue}
+            </p>
+            <h3 className="display mt-3 text-[1.35rem] text-ivory-50">Scan at your table</h3>
+            <div className="mt-4 flex items-start gap-4">
+              <span className="shrink-0 rounded-[3px] border border-white/15 bg-white p-2">
+                <DemoQRCode value={qrValue} size={96} />
+              </span>
+              <p className="text-[12.5px] leading-relaxed text-warm-400">
+                Table tents carry this code into the live music screen with your location already
+                attached. Illustrative QR only — it opens this local prototype, nothing else.
+              </p>
+            </div>
+          </Panel>
+
+          <Panel dark className="mt-4">
             <p className="eyebrow text-gold-400">Recently played</p>
             <h3 className="display mt-3 text-[1.4rem] text-ivory-50">This evening so far</h3>
 
@@ -332,7 +506,7 @@ export function MusicRequests() {
                         {request.meta.Track ?? request.title}
                       </span>
                       <span className="block text-[12px] text-warm-500">
-                        {relativeTime(request.updatedAt)}
+                        {relativeTime(request.updatedAt)} · {statusLabel({ status: request.status, stage: request.stage })}
                       </span>
                     </span>
                   </li>
@@ -349,7 +523,7 @@ export function MusicRequests() {
           <Notice className="mt-4" tone="gold" title="Demo behaviour">
             <p>
               Voting, queue order and approvals all run on shared prototype state — switch to the
-              Entertainment dashboard to see a request accepted and marked “Now playing”.
+              Live Music Desk to accept, defer, play and mark requests as played.
             </p>
           </Notice>
         </div>

@@ -55,8 +55,8 @@ export const DEPARTMENTS: Department[] = [
   },
   {
     id: 'entertainment',
-    name: 'Entertainment',
-    subtitle: 'Live sets, song requests & dedications',
+    name: 'Live Music Desk',
+    subtitle: 'Song requests, queue, votes & dedications',
     location: 'Lobby Lounge stage · Ground level',
     services: ['music'],
     staff: staff([
@@ -66,11 +66,23 @@ export const DEPARTMENTS: Department[] = [
     ]),
   },
   {
+    id: 'events',
+    name: 'Events & Banquets',
+    subtitle: 'Celebration music & entertainment enquiries',
+    location: 'Banquet desk · Level 1',
+    services: ['occasions'],
+    staff: staff([
+      ['Sanya Kapoor', 'Events Manager'],
+      ['Devika Rao', 'Banquet Coordinator'],
+      ['Imran Qureshi', 'Entertainment Liaison'],
+    ]),
+  },
+  {
     id: 'concierge',
     name: 'Concierge / Guest Relations',
-    subtitle: 'Transport, guest questions, occasions & feedback',
+    subtitle: 'Transport, guest questions & feedback',
     location: 'Concierge desk · Lobby',
-    services: ['concierge', 'transport', 'feedback', 'occasions', 'billing'],
+    services: ['concierge', 'transport', 'feedback', 'billing'],
     staff: staff([
       ['Vikram Shetty', 'Chief Concierge'],
       ['Aditi Sharma', 'Guest Relations Officer'],
@@ -93,6 +105,13 @@ export const DEPARTMENTS: Department[] = [
 ];
 
 export const DEPARTMENT_IDS = DEPARTMENTS.map((department) => department.id);
+
+/**
+ * The departments surfaced in this focused music & celebration prototype.
+ * The remaining queues are retained (routes still resolve by URL) but hidden
+ * from staff navigation until they are needed again.
+ */
+export const FOCUS_DEPARTMENTS: DepartmentId[] = ['entertainment', 'events'];
 
 export function findDepartment(id: DepartmentId): Department {
   return DEPARTMENTS.find((department) => department.id === id) ?? DEPARTMENTS[0];

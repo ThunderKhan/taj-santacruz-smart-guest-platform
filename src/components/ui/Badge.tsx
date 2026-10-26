@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react';
-import type { Priority, RequestStage, RequestStatus } from '@/types';
+import type { EnquiryStatus, Priority, RequestStage, RequestStatus } from '@/types';
 import { cx } from '@/utils/format';
 import { statusLabel } from '@/services/requestEngine';
+import { enquiryStatusLabel } from '@/services/enquiryEngine';
 
 export type BadgeTone = 'brass' | 'ink' | 'gold' | 'sage' | 'clay' | 'neutral';
 
@@ -101,6 +102,30 @@ export function PriorityBadge({
   return (
     <Badge tone={PRIORITY_TONE[priority]} dark={dark}>
       {PRIORITY_WORD[priority]}
+    </Badge>
+  );
+}
+
+const ENQUIRY_TONE: Record<EnquiryStatus, BadgeTone> = {
+  new: 'brass',
+  under_review: 'ink',
+  needs_info: 'clay',
+  proposal_sent: 'gold',
+  confirmed: 'sage',
+  closed: 'neutral',
+};
+
+/** Status pill for celebration enquiries (own workflow, own wording). */
+export function EnquiryStatusBadge({
+  status,
+  dark = false,
+}: {
+  status: EnquiryStatus;
+  dark?: boolean;
+}) {
+  return (
+    <Badge tone={ENQUIRY_TONE[status]} dark={dark} dot>
+      {enquiryStatusLabel(status)}
     </Badge>
   );
 }

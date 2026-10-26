@@ -1,27 +1,24 @@
-import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, Bell, Clock, MapPin, XCircle } from 'lucide-react';
+import { ArrowLeft, Bell, Clock, MapPin } from 'lucide-react';
 import { useRequests } from '@/store/RequestsProvider';
 import { useHomePath } from '@/hooks/useHomePath';
-import { Button } from '@/components/ui/Button';
 import { Panel, SectionHeading, KeyValue } from '@/components/ui/Panel';
 import { StatusBadge, PriorityBadge, Badge } from '@/components/ui/Badge';
 import { RequestTimeline } from '@/components/ui/Timeline';
 import { EmptyState, Notice } from '@/components/ui/Feedback';
-import { Modal } from '@/components/ui/Overlay';
 import { departmentName } from '@/data/departments';
-import { isTerminal, nextStepHint, statusLabel } from '@/services/requestEngine';
+import { nextStepHint, statusLabel } from '@/services/requestEngine';
 import { fullTimestamp, inr, relativeTime } from '@/utils/format';
 
 /**
- * Full guest-facing request detail: live status, immutable timeline, structured
- * metadata, and the ability to cancel an open request.
+ * Full guest-facing request detail: live status and immutable timeline.
+ * Guests view statuses but never change them — queue and status management
+ * belong exclusively to the staff dashboards.
  */
 export function RequestDetail() {
   const { ref } = useParams<{ ref: string }>();
-  const { getByRef, transition, tick } = useRequests();
+  const { getByRef, tick } = useRequests();
   const homePath = useHomePath();
-  const [confirmCancel, setConfirmCancel] = useState(false);
 
   const request = ref ? getByRef(ref) : undefined;
 
@@ -46,12 +43,6 @@ export function RequestDetail() {
   }
 
   void tick;
-  const canCancel = !isTerminal(request.status);
-
-  const cancel = () => {
-    transition(request.id, 'cancelled', { note: 'Cancelled by the guest' });
-    setConfirmCancel(false);
-  };
 
   return (
     <div className="mx-auto max-w-[1160px] px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
@@ -200,42 +191,15 @@ export function RequestDetail() {
             </div>
           ) : null}
 
-          {canCancel ? (
-            <Panel>
-              <p className="text-[13.5px] leading-relaxed text-warm-600">
-                No longer needed? You can withdraw this request — the department sees it as cancelled
-                immediately.
-              </p>
-              <Button variant="danger" className="mt-4" onClick={() => setConfirmCancel(true)}>
-                <XCircle className="h-4 w-4" strokeWidth={1.7} />
-                Cancel this request
-              </Button>
-            </Panel>
-          ) : null}
+          <Notice tone="neutral" title="Statuses are managed by the team">
+            <p>
+              Guests can follow every step here, but statuses are changed only by the responsible
+              team — on the stage desk or the events desk. To change or withdraw a request, simply
+              speak to the team.
+            </p>
+          </Notice>
         </div>
       </div>
-
-      <Modal
-        open={confirmCancel}
-        onClose={() => setConfirmCancel(false)}
-        title="Cancel this request?"
-        eyebrow={request.ref}
-        description="The department is notified straight away, and the timeline records the cancellation."
-        footer={
-          <>
-            <Button variant="ghost" size="sm" onClick={() => setConfirmCancel(false)}>
-              Keep it
-            </Button>
-            <Button variant="danger" size="sm" onClick={cancel}>
-              Yes, cancel
-            </Button>
-          </>
-        }
-      >
-        <p className="text-[14px] leading-relaxed text-warm-600">
-          {request.title} — {request.description}
-        </p>
-      </Modal>
     </div>
   );
 }

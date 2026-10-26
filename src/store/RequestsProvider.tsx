@@ -10,30 +10,44 @@ import {
 } from 'react';
 import type {
   AppNotification,
+  CelebrationEnquiry,
+  EnquiryStatus,
   GuestSession,
   HotelLocation,
+  MusicRules,
   NotificationAudience,
   RequestSource,
+  RequestStage,
   RequestStatus,
   ServiceRequest,
 } from '@/types';
 import { DEFAULT_LOCATION_ID, LOCATIONS, findLocation } from '@/data/property';
 import { buildSeed, DEMO_GUEST_NAME, DEMO_GUEST_REF } from '@/data/requests';
+import { buildEnquirySeed } from '@/data/celebrations';
+import { DEFAULT_MUSIC_RULES } from '@/data/music';
 import {
   applyTransition,
   buildRequest,
   canTransition,
+  isTerminal,
   statusLabel,
   type NewRequestInput,
   type TransitionOptions,
 } from '@/services/requestEngine';
+import {
+  buildEnquiry,
+  canEnquiryTransition,
+  enquiryNextHint,
+  enquiryStatusLabel,
+  type NewEnquiryInput,
+} from '@/services/enquiryEngine';
 
 /* -------------------------------------------------------------------------- */
 /* Persistence                                                                */
 /* -------------------------------------------------------------------------- */
 
 const STORAGE_KEY = 'smart-guest-platform:v1';
-const STATE_VERSION = 1;
+const STATE_VERSION = 2;
 /** Re-anchor seeded timestamps if the prototype has been left idle this long. */
 const REANCHOR_AFTER_MS = 14 * 60 * 60 * 1000;
 
@@ -41,8 +55,11 @@ interface PersistedState {
   version: number;
   seededAt: number;
   sequence: number;
+  enquirySequence: number;
   session: GuestSession;
   requests: ServiceRequest[];
+  enquiries: CelebrationEnquiry[];
+  musicRules: MusicRules;
   notifications: AppNotification[];
   ribbonCollapsed: boolean;
 }
@@ -57,6 +74,13 @@ function shiftTimestamps(state: PersistedState, delta: number): PersistedState {
       updatedAt: request.updatedAt + delta,
       history: request.history.map((event) => ({ ...event, at: event.at + delta })),
     })),
+    enquiries: state.enquiries.map((enquiry) => ({
+      ...enquiry,
+      submittedAt: enquiry.submittedAt + delta,
+      updatedAt: enquiry.updatedAt + delta,
+      history: enquiry.history.map((event) => ({ ...event, at: event.at + delta })),
+      internalNotes: enquiry.internalNotes.map((note) => ({ ...note, at: note.at + delta })),
+    })),
     notifications: state.notifications.map((notification) => ({
       ...notification,
       at: notification.at + delta,
@@ -70,6 +94,7 @@ function createInitialState(now: number): PersistedState {
     version: STATE_VERSION,
     seededAt: now,
     sequence: seed.sequence,
+    enquirySequence: 3300,
     session: {
       guestRef: DEMO_GUEST_REF,
       guestName: DEMO_GUEST_NAME,
@@ -77,6 +102,8 @@ function createInitialState(now: number): PersistedState {
       entry: 'qr',
     },
     requests: seed.requests,
+    enquiries: buildEnquirySeed(now),
+    musicRules: { ...DEFAULT_MUSIC_RULES },
     notifications: seed.notifications,
     ribbonCollapsed: false,
   };
@@ -92,14 +119,15 @@ function loadState(now: number): PersistedState {
       !parsed ||
       parsed.version !== STATE_VERSION ||
       !Array.isArray(parsed.requests) ||
-      parsed.requests.length === 0
+      parsed.requests.length === 0 ||
+      !Array.isArray(parsed.enquiries)
     ) {
       return createInitialState(now);
     }
 
     const idleFor = now - parsed.seededAt;
     if (idleFor > REANCHOR_AFTER_MS) return shiftTimestamps(parsed, idleFor);
-    return parsed;
+    return { ...parsed, musicRules: { ...DEFAULT_MUSIC_RULES, ...parsed.musicRules } };
   } catch {
     // Corrupt storage must never break the demo — fall back to a fresh seed.
     return createInitialState(now);
@@ -127,8 +155,24 @@ interface AssignOptions {
 type Action =
   | { type: 'create'; request: ServiceRequest; now: number }
   | { type: 'transition'; id: string; status: RequestStatus; options: TransitionOptions; now: number }
+  /** Stage-only update within an open request (e.g. queued → playing). */
+  | { type: 'stage'; id: string; stage: RequestStage; options: { by: string; note?: string }; now: number }
   | { type: 'assign'; id: string; options: AssignOptions; now: number }
+  | { type: 'dedication'; id: string; hidden: boolean; by: string; note?: string; now: number }
   | { type: 'vote'; id: string }
+  | { type: 'createEnquiry'; enquiry: CelebrationEnquiry; now: number }
+  | {
+      type: 'enquiryStatus';
+      id: string;
+      status: EnquiryStatus;
+      by: string;
+      note?: string;
+      now: number;
+    }
+  | { type: 'enquiryNote'; id: string; note: { id: string; at: number; by: string; body: string }; now: number }
+  | { type: 'enquiryAssign'; id: string; staff: string; by: string; now: number }
+  | { type: 'enquiryProposal'; id: string; packageLabel: string; by: string; note?: string; now: number }
+  | { type: 'setMusicRules'; rules: Partial<MusicRules> }
   | { type: 'setLocation'; locationId: string }
   | { type: 'setEntry'; entry: RequestSource }
   | { type: 'markRead'; all?: boolean; department?: string }
@@ -175,6 +219,44 @@ function guestNotification(
     audience: 'guest',
     guestRef: request.guestRef,
     ref: request.ref,
+  };
+}
+
+const ENQUIRY_DEPARTMENT = 'events';
+
+function enquiryStaffNotification(
+  enquiry: CelebrationEnquiry,
+  title: string,
+  body: string,
+  now: number,
+): AppNotification {
+  return {
+    id: `n_${now}_${enquiry.ref}_s`,
+    title,
+    body,
+    at: now,
+    read: false,
+    audience: 'staff',
+    department: ENQUIRY_DEPARTMENT,
+    ref: enquiry.ref,
+  };
+}
+
+function enquiryGuestNotification(
+  enquiry: CelebrationEnquiry,
+  title: string,
+  body: string,
+  now: number,
+): AppNotification {
+  return {
+    id: `n_${now}_${enquiry.ref}_g`,
+    title,
+    body,
+    at: now,
+    read: false,
+    audience: 'guest',
+    guestRef: enquiry.guestRef,
+    ref: enquiry.ref,
   };
 }
 
@@ -233,6 +315,48 @@ function reducer(state: PersistedState, action: Action): PersistedState {
       };
     }
 
+    case 'stage': {
+      const target = state.requests.find((request) => request.id === action.id);
+      if (!target || target.status !== 'in_progress' || isTerminal(target.status)) return state;
+
+      const updated: ServiceRequest = {
+        ...target,
+        stage: action.stage,
+        updatedAt: action.now,
+        history: [
+          ...target.history,
+          {
+            status: target.status,
+            at: action.now,
+            by: action.options.by,
+            stage: action.stage,
+            note: action.options.note,
+          },
+        ],
+      };
+      const label = statusLabel({ status: updated.status, stage: updated.stage });
+
+      const entries: AppNotification[] = [
+        staffNotification(updated, `${updated.ref} · ${label}`, updated.title, action.now),
+      ];
+      if (updated.guestRef === state.session.guestRef) {
+        entries.push(
+          guestNotification(
+            updated,
+            `${updated.ref} · ${label}`,
+            action.options.note ?? `Status updated to ${label}.`,
+            action.now,
+          ),
+        );
+      }
+
+      return {
+        ...state,
+        requests: state.requests.map((request) => (request.id === action.id ? updated : request)),
+        notifications: notify(state.notifications, entries),
+      };
+    }
+
     case 'assign': {
       const target = state.requests.find((request) => request.id === action.id);
       if (!target) return state;
@@ -266,6 +390,29 @@ function reducer(state: PersistedState, action: Action): PersistedState {
       };
     }
 
+    case 'dedication': {
+      const target = state.requests.find((request) => request.id === action.id);
+      if (!target) return state;
+      const updated: ServiceRequest = {
+        ...target,
+        dedicationHidden: action.hidden,
+        updatedAt: action.now,
+        history: [
+          ...target.history,
+          {
+            status: target.status,
+            at: action.now,
+            by: action.by,
+            note: action.note,
+          },
+        ],
+      };
+      return {
+        ...state,
+        requests: state.requests.map((request) => (request.id === action.id ? updated : request)),
+      };
+    }
+
     case 'vote': {
       return {
         ...state,
@@ -280,6 +427,152 @@ function reducer(state: PersistedState, action: Action): PersistedState {
         ),
       };
     }
+
+    case 'createEnquiry': {
+      const enquiry = action.enquiry;
+      return {
+        ...state,
+        enquirySequence: state.enquirySequence + 1,
+        enquiries: [enquiry, ...state.enquiries],
+        notifications: notify(state.notifications, [
+          enquiryStaffNotification(
+            enquiry,
+            `New celebration enquiry ${enquiry.ref}`,
+            `${enquiry.occasion} · ${enquiry.venue} · ${enquiry.entertainment}`,
+            action.now,
+          ),
+          enquiryGuestNotification(
+            enquiry,
+            `Enquiry ${enquiry.ref} received`,
+            'The events team has your celebration enquiry. This is an enquiry, not a booking.',
+            action.now,
+          ),
+        ]),
+      };
+    }
+
+    case 'enquiryStatus': {
+      const target = state.enquiries.find((enquiry) => enquiry.id === action.id);
+      if (!target || !canEnquiryTransition(target.status, action.status)) return state;
+
+      const label = enquiryStatusLabel(action.status);
+      const updated: CelebrationEnquiry = {
+        ...target,
+        status: action.status,
+        updatedAt: action.now,
+        history: [
+          ...target.history,
+          { status: action.status, at: action.now, by: action.by, note: action.note },
+        ],
+      };
+
+      const entries: AppNotification[] = [
+        enquiryStaffNotification(
+          updated,
+          `${updated.ref} · ${label}`,
+          `${updated.occasion} · ${updated.venue}`,
+          action.now,
+        ),
+      ];
+      if (updated.guestRef === state.session.guestRef) {
+        entries.push(
+          enquiryGuestNotification(updated, `${updated.ref} · ${label}`, enquiryNextHint(updated), action.now),
+        );
+      }
+
+      return {
+        ...state,
+        enquiries: state.enquiries.map((enquiry) => (enquiry.id === action.id ? updated : enquiry)),
+        notifications: notify(state.notifications, entries),
+      };
+    }
+
+    case 'enquiryNote': {
+      const target = state.enquiries.find((enquiry) => enquiry.id === action.id);
+      if (!target) return state;
+      const updated: CelebrationEnquiry = {
+        ...target,
+        updatedAt: action.now,
+        internalNotes: [...target.internalNotes, action.note],
+      };
+      return {
+        ...state,
+        enquiries: state.enquiries.map((enquiry) => (enquiry.id === action.id ? updated : enquiry)),
+        notifications: notify(state.notifications, [
+          enquiryStaffNotification(
+            updated,
+            `Internal note · ${updated.ref}`,
+            action.note.body.slice(0, 90),
+            action.now,
+          ),
+        ]),
+      };
+    }
+
+    case 'enquiryAssign': {
+      const target = state.enquiries.find((enquiry) => enquiry.id === action.id);
+      if (!target) return state;
+      const updated: CelebrationEnquiry = {
+        ...target,
+        assignedTo: action.staff,
+        updatedAt: action.now,
+        history: [
+          ...target.history,
+          {
+            status: target.status,
+            at: action.now,
+            by: action.by,
+            note: `Assigned to ${action.staff}`,
+          },
+        ],
+      };
+      return {
+        ...state,
+        enquiries: state.enquiries.map((enquiry) => (enquiry.id === action.id ? updated : enquiry)),
+        notifications: notify(state.notifications, [
+          enquiryStaffNotification(
+            updated,
+            `${updated.ref} assigned to ${action.staff}`,
+            `${updated.occasion} · ${updated.venue}`,
+            action.now,
+          ),
+        ]),
+      };
+    }
+
+    case 'enquiryProposal': {
+      const target = state.enquiries.find((enquiry) => enquiry.id === action.id);
+      if (!target) return state;
+      const updated: CelebrationEnquiry = {
+        ...target,
+        proposedPackage: action.packageLabel,
+        updatedAt: action.now,
+        history: [
+          ...target.history,
+          {
+            status: target.status,
+            at: action.now,
+            by: action.by,
+            note: action.note ?? `Proposed sample package: ${action.packageLabel}`,
+          },
+        ],
+      };
+      return {
+        ...state,
+        enquiries: state.enquiries.map((enquiry) => (enquiry.id === action.id ? updated : enquiry)),
+        notifications: notify(state.notifications, [
+          enquiryGuestNotification(
+            updated,
+            `Proposal recorded · ${updated.ref}`,
+            'A sample package has been attached to your enquiry — an enquiry is not a booking.',
+            action.now,
+          ),
+        ]),
+      };
+    }
+
+    case 'setMusicRules':
+      return { ...state, musicRules: { ...state.musicRules, ...action.rules } };
 
     case 'setLocation': {
       if (!LOCATIONS.some((location) => location.id === action.locationId)) return state;
@@ -347,7 +640,11 @@ export interface RequestsApi {
     status: RequestStatus,
     options?: Partial<TransitionOptions>,
   ) => boolean;
+  /** Stage-only progression inside an open request (queued → playing). */
+  setStage: (id: string, stage: RequestStage, options?: { by?: string; note?: string }) => void;
   assign: (id: string, options: AssignOptions) => void;
+  /** Hide or reveal a dedication on the public queue view. */
+  setDedicationHidden: (id: string, hidden: boolean, note?: string) => void;
   toggleVote: (id: string) => void;
   setLocation: (locationId: string) => void;
   setEntry: (entry: RequestSource) => void;
@@ -356,6 +653,22 @@ export interface RequestsApi {
   resetDemo: () => void;
   setRibbonCollapsed: (collapsed: boolean) => void;
   getByRef: (ref: string) => ServiceRequest | undefined;
+
+  /* ---------------------------- Celebration enquiries ---------------------- */
+  enquiries: CelebrationEnquiry[];
+  musicRules: MusicRules;
+  createEnquiry: (input: NewEnquiryInput) => CelebrationEnquiry;
+  setEnquiryStatus: (
+    id: string,
+    status: EnquiryStatus,
+    options?: { note?: string; by?: string },
+  ) => boolean;
+  addEnquiryNote: (id: string, body: string, by?: string) => void;
+  assignEnquiry: (id: string, staff: string, by?: string) => void;
+  proposeEnquiryPackage: (id: string, packageLabel: string, by?: string, note?: string) => void;
+  updateMusicRules: (rules: Partial<MusicRules>) => void;
+  getEnquiryByRef: (ref: string) => CelebrationEnquiry | undefined;
+
   /** Re-renders the elapsed-time column without touching persisted state. */
   tick: number;
 }
@@ -363,6 +676,8 @@ export interface RequestsApi {
 const RequestsContext = createContext<RequestsApi | null>(null);
 
 const STAFF_ACTOR = 'Operations · Duty desk';
+const EVENTS_ACTOR = 'Events desk';
+const STAGE_ACTOR = 'Entertainment · stage desk';
 
 export function RequestsProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, undefined, () => loadState(Date.now()));
@@ -435,10 +750,52 @@ export function RequestsProvider({ children }: { children: ReactNode }) {
       });
       pushToast({
         tone: 'success',
-        title: `${target.ref} · ${statusLabel({ status })}`,
+        title: `${target.ref} · ${statusLabel({ status, stage: options.stage ?? target.stage })}`,
         body: options.note ?? target.title,
       });
       return true;
+    },
+    [state.requests, pushToast],
+  );
+
+  const setStage = useCallback(
+    (id: string, stage: RequestStage, options: { by?: string; note?: string } = {}) => {
+      const target = state.requests.find((request) => request.id === id);
+      if (!target || target.status !== 'in_progress' || isTerminal(target.status)) return;
+
+      dispatch({
+        type: 'stage',
+        id,
+        stage,
+        options: { by: options.by ?? STAGE_ACTOR, note: options.note },
+        now: Date.now(),
+      });
+      pushToast({
+        tone: 'success',
+        title: `${target.ref} · ${statusLabel({ status: 'in_progress', stage })}`,
+        body: options.note ?? target.title,
+      });
+    },
+    [state.requests, pushToast],
+  );
+
+  const setDedicationHidden = useCallback(
+    (id: string, hidden: boolean, note?: string) => {
+      const target = state.requests.find((request) => request.id === id);
+      if (!target) return;
+      dispatch({
+        type: 'dedication',
+        id,
+        hidden,
+        by: STAGE_ACTOR,
+        note: note ?? (hidden ? 'Dedication held back from the queue view' : 'Dedication approved for the queue view'),
+        now: Date.now(),
+      });
+      pushToast({
+        tone: 'info',
+        title: hidden ? 'Dedication hidden' : 'Dedication approved',
+        body: target.ref,
+      });
     },
     [state.requests, pushToast],
   );
@@ -460,6 +817,115 @@ export function RequestsProvider({ children }: { children: ReactNode }) {
       dispatch({ type: 'vote', id });
     },
     [],
+  );
+
+  /* ---------------------------- Celebration enquiries ---------------------- */
+
+  const createEnquiry = useCallback(
+    (input: NewEnquiryInput): CelebrationEnquiry => {
+      const now = Date.now();
+      const location = findLocation(state.session.locationId);
+      const enquiry = buildEnquiry(input, {
+        sequence: state.enquirySequence,
+        session: state.session,
+        location,
+        now,
+      });
+      dispatch({ type: 'createEnquiry', enquiry, now });
+      pushToast({
+        tone: 'success',
+        title: `Enquiry ${enquiry.ref} received`,
+        body: 'This is an enquiry, not a booking — the events team will follow up.',
+      });
+      return enquiry;
+    },
+    [state.enquirySequence, state.session, pushToast],
+  );
+
+  const setEnquiryStatus = useCallback(
+    (
+      id: string,
+      status: EnquiryStatus,
+      options: { note?: string; by?: string } = {},
+    ) => {
+      const target = state.enquiries.find((enquiry) => enquiry.id === id);
+      if (!target) return false;
+      if (!canEnquiryTransition(target.status, status)) {
+        pushToast({
+          tone: 'warn',
+          title: 'Status not allowed',
+          body: `${target.ref} is already ${enquiryStatusLabel(target.status)}.`,
+        });
+        return false;
+      }
+
+      dispatch({
+        type: 'enquiryStatus',
+        id,
+        status,
+        by: options.by ?? EVENTS_ACTOR,
+        note: options.note,
+        now: Date.now(),
+      });
+      pushToast({
+        tone: 'success',
+        title: `${target.ref} · ${enquiryStatusLabel(status)}`,
+        body: options.note ?? `${target.occasion} · ${target.venue}`,
+      });
+      return true;
+    },
+    [state.enquiries, pushToast],
+  );
+
+  const addEnquiryNote = useCallback(
+    (id: string, body: string, by: string = EVENTS_ACTOR) => {
+      const trimmed = body.trim();
+      if (!trimmed) return;
+      dispatch({
+        type: 'enquiryNote',
+        id,
+        note: { id: `n_${Date.now()}`, at: Date.now(), by, body: trimmed },
+        now: Date.now(),
+      });
+      pushToast({ tone: 'info', title: 'Internal note saved', body: 'Visible to events staff only.' });
+    },
+    [pushToast],
+  );
+
+  const assignEnquiry = useCallback(
+    (id: string, staff: string, by: string = EVENTS_ACTOR) => {
+      dispatch({ type: 'enquiryAssign', id, staff, by, now: Date.now() });
+      pushToast({
+        tone: 'info',
+        title: 'Assignment updated',
+        body: `${staff} is now handling this enquiry.`,
+      });
+    },
+    [pushToast],
+  );
+
+  const proposeEnquiryPackage = useCallback(
+    (id: string, packageLabel: string, by: string = EVENTS_ACTOR, note?: string) => {
+      dispatch({ type: 'enquiryProposal', id, packageLabel, by, note, now: Date.now() });
+      pushToast({
+        tone: 'success',
+        title: 'Sample package recorded',
+        body: 'Guests are reminded that a proposal is not a confirmed booking.',
+      });
+    },
+    [pushToast],
+  );
+
+  const updateMusicRules = useCallback(
+    (rules: Partial<MusicRules>) => {
+      dispatch({ type: 'setMusicRules', rules });
+      pushToast({
+        tone: 'info',
+        title: 'Demo rules updated',
+        body: 'The guest music screen now reflects the new rules.',
+      });
+    },
+    [pushToast],
   );
 
   const resetDemo = useCallback(() => {
@@ -490,7 +956,9 @@ export function RequestsProvider({ children }: { children: ReactNode }) {
       ribbonCollapsed: state.ribbonCollapsed,
       createRequest,
       transition,
+      setStage,
       assign,
+      setDedicationHidden,
       toggleVote,
       setLocation: (locationId: string) => dispatch({ type: 'setLocation', locationId }),
       setEntry: (entry: RequestSource) => dispatch({ type: 'setEntry', entry }),
@@ -499,6 +967,17 @@ export function RequestsProvider({ children }: { children: ReactNode }) {
       resetDemo,
       setRibbonCollapsed: (collapsed: boolean) => dispatch({ type: 'setRibbon', collapsed }),
       getByRef: (ref: string) => state.requests.find((request) => request.ref === ref),
+
+      enquiries: state.enquiries,
+      musicRules: state.musicRules,
+      createEnquiry,
+      setEnquiryStatus,
+      addEnquiryNote,
+      assignEnquiry,
+      proposeEnquiryPackage,
+      updateMusicRules,
+      getEnquiryByRef: (ref: string) => state.enquiries.find((enquiry) => enquiry.ref === ref),
+
       tick,
     };
   }, [
@@ -506,11 +985,19 @@ export function RequestsProvider({ children }: { children: ReactNode }) {
     toasts,
     createRequest,
     transition,
+    setStage,
     assign,
+    setDedicationHidden,
     toggleVote,
     markNotificationsRead,
     dismissToast,
     resetDemo,
+    createEnquiry,
+    setEnquiryStatus,
+    addEnquiryNote,
+    assignEnquiry,
+    proposeEnquiryPackage,
+    updateMusicRules,
     tick,
   ]);
 

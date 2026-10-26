@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, ClipboardList, Compass } from 'lucide-react';
 import { useRequests } from '@/store/RequestsProvider';
 import { useHomePath } from '@/hooks/useHomePath';
-import { StatusBadge, PriorityBadge, Badge } from '@/components/ui/Badge';
+import { StatusBadge, PriorityBadge, Badge, EnquiryStatusBadge } from '@/components/ui/Badge';
 import { SectionHeading } from '@/components/ui/Panel';
 import { SegmentedControl } from '@/components/ui/Field';
 import { EmptyState, Notice } from '@/components/ui/Feedback';
@@ -17,10 +17,11 @@ type Filter = 'active' | 'completed' | 'all';
 
 /**
  * "My requests" — every submission made from this demo session, with live
- * status straight from shared state.
+ * status straight from shared state. Song requests and celebration enquiries
+ * both appear here.
  */
 export function MyRequests() {
-  const { requests, session, tick } = useRequests();
+  const { requests, enquiries, session, tick } = useRequests();
   const [filter, setFilter] = useState<Filter>('active');
 
   const mine = useMemo(
@@ -30,6 +31,14 @@ export function MyRequests() {
         .sort((a, b) => b.updatedAt - a.updatedAt),
     // `tick` refreshes relative timestamps without touching persisted state.
     [requests, session.guestRef, tick],
+  );
+
+  const mineEnquiries = useMemo(
+    () =>
+      enquiries
+        .filter((enquiry) => enquiry.guestRef === session.guestRef)
+        .sort((a, b) => b.updatedAt - a.updatedAt),
+    [enquiries, session.guestRef, tick],
   );
 
   const counts = {
@@ -48,14 +57,14 @@ export function MyRequests() {
     <ServiceShell
       eyebrow="Your session"
       title="My requests"
-      description="Everything you have asked for during this stay, with the live status recorded by each department. Rows open a full timeline — no refresh needed."
+      description="Everything you have asked for during this stay — song requests and celebration enquiries — with live status recorded by each team. Rows open a full timeline; no refresh needed."
       actions={
         <Link
           to="/guest"
           className="inline-flex h-11 items-center gap-2 rounded-[3px] border border-warm-300 bg-white px-4 text-[13.5px] font-medium text-ink-900 transition-colors hover:border-warm-400"
         >
           <Compass className="h-4 w-4 text-gold-600" strokeWidth={1.7} />
-          Browse services
+          Back home
         </Link>
       }
     >
@@ -103,15 +112,15 @@ export function MyRequests() {
               title={filter === 'active' ? 'Nothing open right now' : 'No requests here yet'}
               body={
                 filter === 'active'
-                  ? 'Every request has been completed or closed. Anything you raise from the service directory appears here instantly.'
-                  : 'Choose a service from the directory and your request will be tracked here from submission to completion.'
+                  ? 'Every request has been completed or closed. Anything you raise from the home page appears here instantly.'
+                  : 'Request a song or send a celebration enquiry from the home page — both are tracked here from submission to completion.'
               }
               action={
                 <Link
                   to="/guest"
                   className="inline-flex h-10 items-center gap-2 rounded-[3px] bg-ink-900 px-4 text-[13.5px] font-medium text-ivory-50 transition-colors hover:bg-ink-800"
                 >
-                  Open the service directory
+                  Back to the home page
                 </Link>
               }
             />
@@ -126,11 +135,56 @@ export function MyRequests() {
           )}
         </div>
 
+        {/* ------------------------------------------ Celebration enquiries */}
+        {mineEnquiries.length > 0 ? (
+          <div className="mt-10">
+            <SectionHeading
+              eyebrow="Celebration"
+              title="Enquiry history"
+              description="Your music and entertainment enquiries for upcoming celebrations."
+            />
+            <div className="mt-5 overflow-hidden rounded-[4px] border border-cream-300 bg-white shadow-hairline">
+              <ul className="divide-y divide-cream-300">
+                {mineEnquiries.map((enquiry) => (
+                  <li
+                    key={enquiry.id}
+                    className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-4 sm:px-5"
+                  >
+                    <span className="tnum w-[84px] shrink-0 text-[12.5px] font-semibold tracking-[0.05em] text-warm-500">
+                      {enquiry.ref}
+                    </span>
+                    <span className="min-w-0 flex-1 basis-56">
+                      <span className="block truncate text-[14.5px] font-medium text-ink-900">
+                        {enquiry.occasion} · {enquiry.venue}
+                      </span>
+                      <span className="mt-0.5 block text-[12.5px] text-warm-500">
+                        {enquiry.eventDate} at {enquiry.startTime} · {enquiry.entertainment} ·
+                        updated {relativeTime(enquiry.updatedAt)}
+                      </span>
+                    </span>
+                    <span className="flex shrink-0 items-center gap-2">
+                      {enquiry.seeded ? <Badge tone="neutral">Demo</Badge> : null}
+                      <EnquiryStatusBadge status={enquiry.status} />
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <Notice className="mt-4" tone="neutral" title="Enquiries are conversations, not bookings">
+              <p>
+                Celebration enquiries move through New, Under Review, Need More Information and
+                Proposal Sent, ending in Confirmed or Closed. A proposal never confirms a date on
+                its own.
+              </p>
+            </Notice>
+          </div>
+        ) : null}
+
         <Notice className="mt-5" tone="gold" title="Live demonstration">
           <p>
-            Statuses here change the moment a department acts. Switch to a department dashboard from
-            the presenter ribbon, advance a request, then come back — everything stays in sync
-            because all three experiences share one state.
+            Statuses here change the moment a team acts. Switch to a staff dashboard from the
+            presenter ribbon, advance a song request or an enquiry, then come back — everything
+            stays in sync because every screen shares one state.
           </p>
         </Notice>
       </div>
