@@ -4,6 +4,7 @@ import { useRequests } from '@/store/RequestsProvider';
 import { useHomePath } from '@/hooks/useHomePath';
 import { Panel, SectionHeading, KeyValue } from '@/components/ui/Panel';
 import { StatusBadge, PriorityBadge, Badge } from '@/components/ui/Badge';
+import { RequestSteps } from '@/components/RequestSteps';
 import { RequestTimeline } from '@/components/ui/Timeline';
 import { EmptyState, Notice } from '@/components/ui/Feedback';
 import { departmentName } from '@/data/departments';
@@ -94,6 +95,14 @@ export function RequestDetail() {
           <Badge tone="neutral">{request.source === 'qr' ? 'QR entry' : 'Tablet entry'}</Badge>
         </div>
       </header>
+
+      {/* Progress stepper — the plan's Submitted → Played flow, read-only for guests */}
+      {request.service === 'music' ? (
+        <section className="mt-6 rounded-[4px] border border-cream-300 bg-ivory-100/70 p-4 sm:p-5">
+          <p className="eyebrow-sm text-warm-500">Your place in the set</p>
+          <RequestSteps status={request.status} stage={request.stage} className="mt-4" />
+        </section>
+      ) : null}
 
       <div className="mt-7 grid gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
         {/* Timeline */}

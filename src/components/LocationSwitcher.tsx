@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Check, ChevronDown, MapPin } from 'lucide-react';
-import { LOCATIONS, findLocation } from '@/data/property';
+import { GUEST_LOCATIONS, findLocation } from '@/data/property';
 import { useRequests } from '@/store/RequestsProvider';
 import { Modal } from '@/components/ui/Overlay';
 import { Notice } from '@/components/ui/Feedback';
@@ -30,9 +30,9 @@ export function LocationControl({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        aria-label={`Change demo location. Current location: ${location.label}`}
+        aria-label={`Change your table or venue. Current location: ${location.label}`}
         className={cx(
-          'inline-flex max-w-full items-center gap-2 rounded-full border px-3 transition-colors',
+          'inline-flex min-w-0 max-w-full items-center gap-2 rounded-full border px-3 transition-colors',
           'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-600',
           size === 'sm' ? 'h-8 text-[12.5px]' : 'h-10 text-[13.5px]',
           dark
@@ -42,7 +42,7 @@ export function LocationControl({
         )}
       >
         <MapPin className={cx('shrink-0 text-gold-600', size === 'sm' ? 'h-3.5 w-3.5' : 'h-4 w-4')} strokeWidth={1.7} />
-        <span className="truncate font-medium">{location.label}</span>
+        <span className="min-w-0 truncate font-medium">{location.label}</span>
         <ChevronDown
           className={cx('shrink-0', size === 'sm' ? 'h-3.5 w-3.5' : 'h-4 w-4', dark ? 'text-warm-400' : 'text-warm-500')}
           strokeWidth={1.7}
@@ -52,9 +52,9 @@ export function LocationControl({
       <Modal
         open={open}
         onClose={() => setOpen(false)}
-        title="Demo location"
-        eyebrow="Presenter control"
-        description="Switch the location context used for new requests."
+        title="Your table or venue"
+        eyebrow="QR entry"
+        description="Guests normally arrive by scanning the QR code on their table tent — pick another table to replay the flow."
         footer={
           <button
             type="button"
@@ -76,7 +76,7 @@ export function LocationControl({
         </Notice>
 
         <ul className="mt-4 divide-y divide-cream-300 border-y border-cream-300">
-          {LOCATIONS.map((entry) => {
+          {GUEST_LOCATIONS.map((entry) => {
             const active = entry.id === location.id;
             return (
               <li key={entry.id}>

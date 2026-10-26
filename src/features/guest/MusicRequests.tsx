@@ -11,6 +11,8 @@ import { Panel, SectionHeading } from '@/components/ui/Panel';
 import { ChoiceChip, SearchInput, TextArea } from '@/components/ui/Field';
 import { EmptyState, Notice } from '@/components/ui/Feedback';
 import { DemoQRCode } from '@/components/DemoQRCode';
+import { LocationControl } from '@/components/LocationSwitcher';
+import { RequestSteps } from '@/components/RequestSteps';
 import { NOW_PLAYING, PERFORMER, SONG_CATALOGUE, SONG_CATEGORIES } from '@/data/music';
 import { isTerminal, statusLabel } from '@/services/requestEngine';
 import type { Song, SongCategory } from '@/types';
@@ -19,13 +21,13 @@ import { relativeTime } from '@/utils/format';
 /**
  * Live music & song requests — the guest half of Feature A.
  *
- * Guests browse the catalogue by category or search, request a track with an
- * optional dedication, and vote on the approved queue. Statuses are read-only
- * for guests: submitted, accepted, queued, playing, played and rejected are all
- * managed exclusively from the performer's stage dashboard.
+ * Ordered for the shortest path from a table-tent QR scan to a sent request:
+ * search first, then the guest's own requests, then the votable queue. Statuses
+ * are read-only for guests — submitted, accepted, queued, playing, played and
+ * rejected are all managed exclusively from the performer's stage dashboard.
  */
 export function MusicRequests() {
-  const { requests, session, createRequest, toggleVote, musicRules } = useRequests();
+  const { requests, session, location, createRequest, toggleVote, musicRules } = useRequests();
   const homePath = useHomePath();
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<SongCategory | 'all'>('all');
@@ -110,7 +112,7 @@ export function MusicRequests() {
     const request = createRequest({
       service: 'music',
       title: `Song request — ${selected.title}`,
-      description: `Requested from the ${PERFORMER.venue} guest music screen.`,
+      description: `Requested from ${location.label} at the ${PERFORMER.venue} guest music screen.`,
       guestNote: dedication.trim() || undefined,
       votes: 1,
       meta: {
@@ -141,10 +143,11 @@ export function MusicRequests() {
       }
     : NOW_PLAYING;
 
+  /** The table-tent QR opens this screen with the scanned table attached. */
   const qrValue = useMemo(() => {
     const origin = typeof window === 'undefined' ? '' : window.location.origin;
-    return `${origin}/guest/music`;
-  }, []);
+    return `${origin}/guest/music?loc=${location.id}`;
+  }, [location.id]);
 
   if (placedRef) {
     return (
@@ -161,6 +164,7 @@ export function MusicRequests() {
       eyebrow={PERFORMER.name}
       title="Live music requests"
       description={`${PERFORMER.role}. ${PERFORMER.setNote}. Request a track, add a dedication, or vote for the approved queue — no audio is streamed in this prototype, song metadata only.`}
+      actions={<LocationControl />}
     >
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
         <div>
@@ -217,128 +221,12 @@ export function MusicRequests() {
             </div>
           </div>
 
-          {/* --------------------------------------------------- Your requests */}
-          {myRequests.length > 0 ? (
-            <div className="mt-7">
-              <SectionHeading
-                eyebrow="Your requests"
-                title="How your tracks are doing"
-                description="Statuses update live from the stage desk — this screen never changes them."
-              />
-              <ul className="mt-4 divide-y divide-cream-300 rounded-[4px] border border-cream-300 bg-white shadow-hairline">
-                {myRequests.slice(0, 6).map((request) => (
-                  <li key={request.id}>
-                    <Link
-                      to={`${homePath}/my-requests/${request.ref}`}
-                      className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 transition-colors hover:bg-warm-50 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-gold-600 sm:px-5"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-[14.5px] font-medium text-ink-900">
-                          {request.meta.Track ?? request.title}
-                        </p>
-                        <p className="mt-0.5 text-[12.5px] text-warm-500">
-                          {request.ref} · {relativeTime(request.updatedAt)}
-                          {request.guestNote ? ' · dedication' : ''}
-                        </p>
-                      </div>
-                      <StatusBadge status={request.status} stage={request.stage} />
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ) : null}
-
-          {/* ----------------------------------------------------------- Queue */}
-          <div className="mt-7">
-            <SectionHeading
-              eyebrow="Audience queue"
-              title="What the room is asking for"
-              description={
-                musicRules.votingEnabled
-                  ? 'Only approved tracks appear here. Votes are shared across every guest screen and the stage dashboard.'
-                  : 'Only approved tracks appear here. Voting is paused for this set — the performer is curating the running order.'
-              }
-              action={
-                <span className="chip">
-                  <Users className="h-3.5 w-3.5" strokeWidth={1.7} />
-                  {queue.length} in queue
-                </span>
-              }
-            />
-
-            {queue.length === 0 ? (
-              <Panel className="mt-5">
-                <EmptyState
-                  icon={<ListMusic className="h-5 w-5" strokeWidth={1.5} />}
-                  title="The queue is open"
-                  body="No approved requests right now — be the first to request a track below."
-                />
-              </Panel>
-            ) : (
-              <ul className="mt-5 divide-y divide-cream-300 rounded-[4px] border border-cream-300 bg-white shadow-hairline">
-                {queue.map((request, index) => {
-                  const voted = Boolean(request.guestVoted);
-                  return (
-                    <li
-                      key={request.id}
-                      className="flex flex-wrap items-center gap-x-4 gap-y-3 px-4 py-3.5 sm:px-5"
-                    >
-                      <span className="tnum w-6 shrink-0 text-[13px] font-semibold text-warm-400">
-                        {String(index + 1).padStart(2, '0')}
-                      </span>
-
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-[14.5px] font-medium text-ink-900">
-                          {request.meta.Track ?? request.title}
-                        </p>
-                        <p className="mt-0.5 text-[12.5px] text-warm-500">
-                          {request.meta.Artist} · {request.location}
-                          {request.guestNote
-                            ? request.dedicationHidden
-                              ? ' · dedication held for review'
-                              : ' · dedication'
-                            : ''}
-                        </p>
-                      </div>
-
-                      <StatusBadge status={request.status} stage={request.stage} />
-
-                      <button
-                        type="button"
-                        onClick={() => handleVote(request.id)}
-                        aria-pressed={voted}
-                        disabled={!musicRules.votingEnabled}
-                        title={
-                          musicRules.votingEnabled
-                            ? voted
-                              ? 'Remove your vote'
-                              : 'Vote for this track'
-                            : 'Voting is paused for this set'
-                        }
-                        className={
-                          voted
-                            ? 'inline-flex h-9 items-center gap-1.5 rounded-full border border-gold-600 bg-gold-200/60 px-3.5 text-[13px] font-semibold text-gold-700 transition-colors disabled:cursor-not-allowed disabled:opacity-45'
-                            : 'inline-flex h-9 items-center gap-1.5 rounded-full border border-warm-300 bg-white px-3.5 text-[13px] font-medium text-warm-700 transition-colors hover:border-warm-400 hover:text-ink-900 disabled:cursor-not-allowed disabled:opacity-45'
-                        }
-                      >
-                        <ThumbsUp className="h-3.5 w-3.5" strokeWidth={1.8} />
-                        <span className="tnum">{request.votes ?? 0}</span>
-                        <span className="sr-only">{voted ? 'Remove your vote' : 'Vote for this track'}</span>
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </div>
-
           {/* ---------------------------------------------------------- Search */}
           <div className="mt-7">
             <SectionHeading
               eyebrow="Request a track"
-              title="Search the catalogue"
-              description="Dedications are read by the team before the set — only approved ones are shared."
+              title="Find your song"
+              description="Search by title, artist or genre, choose a track, add an optional dedication and send it straight to the stage desk."
             />
 
             <div className="mt-4 flex flex-wrap gap-2">
@@ -356,7 +244,7 @@ export function MusicRequests() {
               ))}
             </div>
 
-            <div className="mt-4 max-w-md">
+            <div className="mt-4 max-w-xl">
               <SearchInput
                 value={query}
                 onValueChange={setQuery}
@@ -467,6 +355,128 @@ export function MusicRequests() {
               </Panel>
             ) : null}
           </div>
+
+          {/* --------------------------------------------------- Your requests */}
+          {myRequests.length > 0 ? (
+            <div className="mt-7">
+              <SectionHeading
+                eyebrow="Your requests"
+                title="How your tracks are doing"
+                description="Statuses update live from the stage desk — this screen never changes them."
+              />
+              <ul className="mt-4 divide-y divide-cream-300 rounded-[4px] border border-cream-300 bg-white shadow-hairline">
+                {myRequests.slice(0, 6).map((request) => (
+                  <li key={request.id}>
+                    <Link
+                      to={`${homePath}/my-requests/${request.ref}`}
+                      className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 transition-colors hover:bg-warm-50 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-gold-600 sm:px-5"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-[14.5px] font-medium text-ink-900">
+                          {request.meta.Track ?? request.title}
+                        </p>
+                        <p className="mt-0.5 text-[12.5px] text-warm-500">
+                          {request.ref} · {relativeTime(request.updatedAt)}
+                          {request.guestNote ? ' · dedication' : ''}
+                        </p>
+                        <RequestSteps
+                          compact
+                          status={request.status}
+                          stage={request.stage}
+                          className="mt-2"
+                        />
+                      </div>
+                      <StatusBadge status={request.status} stage={request.stage} />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+
+          {/* ----------------------------------------------------------- Queue */}
+          <div className="mt-7">
+            <SectionHeading
+              eyebrow="Audience queue"
+              title="What the room is asking for"
+              description={
+                musicRules.votingEnabled
+                  ? 'Only approved tracks appear here. Votes are shared across every guest screen and the stage dashboard.'
+                  : 'Only approved tracks appear here. Voting is paused for this set — the performer is curating the running order.'
+              }
+              action={
+                <span className="chip">
+                  <Users className="h-3.5 w-3.5" strokeWidth={1.7} />
+                  {queue.length} in queue
+                </span>
+              }
+            />
+
+            {queue.length === 0 ? (
+              <Panel className="mt-5">
+                <EmptyState
+                  icon={<ListMusic className="h-5 w-5" strokeWidth={1.5} />}
+                  title="The queue is open"
+                  body="No approved requests right now — be the first to request a track above."
+                />
+              </Panel>
+            ) : (
+              <ul className="mt-5 divide-y divide-cream-300 rounded-[4px] border border-cream-300 bg-white shadow-hairline">
+                {queue.map((request, index) => {
+                  const voted = Boolean(request.guestVoted);
+                  return (
+                    <li
+                      key={request.id}
+                      className="flex flex-wrap items-center gap-x-4 gap-y-3 px-4 py-3.5 sm:px-5"
+                    >
+                      <span className="tnum w-6 shrink-0 text-[13px] font-semibold text-warm-400">
+                        {String(index + 1).padStart(2, '0')}
+                      </span>
+
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-[14.5px] font-medium text-ink-900">
+                          {request.meta.Track ?? request.title}
+                        </p>
+                        <p className="mt-0.5 text-[12.5px] text-warm-500">
+                          {request.meta.Artist} · {request.location}
+                          {request.guestNote
+                            ? request.dedicationHidden
+                              ? ' · dedication held for review'
+                              : ' · dedication'
+                            : ''}
+                        </p>
+                      </div>
+
+                      <StatusBadge status={request.status} stage={request.stage} />
+
+                      <button
+                        type="button"
+                        onClick={() => handleVote(request.id)}
+                        aria-pressed={voted}
+                        disabled={!musicRules.votingEnabled}
+                        title={
+                          musicRules.votingEnabled
+                            ? voted
+                              ? 'Remove your vote'
+                              : 'Vote for this track'
+                            : 'Voting is paused for this set'
+                        }
+                        className={
+                          voted
+                            ? 'inline-flex h-9 items-center gap-1.5 rounded-full border border-gold-600 bg-gold-200/60 px-3.5 text-[13px] font-semibold text-gold-700 transition-colors disabled:cursor-not-allowed disabled:opacity-45'
+                            : 'inline-flex h-9 items-center gap-1.5 rounded-full border border-warm-300 bg-white px-3.5 text-[13px] font-medium text-warm-700 transition-colors hover:border-warm-400 hover:text-ink-900 disabled:cursor-not-allowed disabled:opacity-45'
+                        }
+                      >
+                        <ThumbsUp className="h-3.5 w-3.5" strokeWidth={1.8} />
+                        <span className="tnum">{request.votes ?? 0}</span>
+                        <span className="sr-only">{voted ? 'Remove your vote' : 'Vote for this track'}</span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
         </div>
 
         {/* ---------------------------------------------------------- Sidebar */}
@@ -476,16 +486,22 @@ export function MusicRequests() {
               <ScanLine className="mr-1.5 inline h-3.5 w-3.5" strokeWidth={1.7} />
               QR entry · {PERFORMER.venue}
             </p>
-            <h3 className="display mt-3 text-[1.35rem] text-ivory-50">Scan at your table</h3>
+            <h3 className="display mt-3 text-[1.35rem] text-ivory-50">
+              You’re at {location.label}
+            </h3>
             <div className="mt-4 flex items-start gap-4">
               <span className="shrink-0 rounded-[3px] border border-white/15 bg-white p-2">
                 <DemoQRCode value={qrValue} size={96} />
               </span>
               <p className="text-[12.5px] leading-relaxed text-warm-400">
-                Table tents carry this code into the live music screen with your location already
-                attached. Illustrative QR only — it opens this local prototype, nothing else.
+                Table tents carry this code, so the music screen opens already sitting at your
+                table — change it any time with the control above. Illustrative QR only — it opens
+                this local prototype, nothing else.
               </p>
             </div>
+            <p className="mt-3 break-all rounded-[3px] bg-white/[0.06] px-2 py-1.5 text-[11.5px] text-warm-500">
+              {qrValue}
+            </p>
           </Panel>
 
           <Panel dark className="mt-4">

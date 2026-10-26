@@ -73,8 +73,9 @@ export function GuestLayout() {
             ))}
           </nav>
 
-          <div className="ml-auto flex shrink-0 items-center gap-2 sm:ml-0 md:ml-0">
-            <div className="md:hidden">
+          {/* Mobile cluster: allowed to shrink so narrow phones never scroll sideways */}
+          <div className="ml-auto flex min-w-0 items-center justify-end gap-2 sm:ml-0 md:ml-0">
+            <div className="min-w-0 md:hidden">
               <LocationControl size="sm" />
             </div>
             <NotificationBell audience="guest" />

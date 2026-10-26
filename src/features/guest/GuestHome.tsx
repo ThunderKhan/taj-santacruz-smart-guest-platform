@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Clock, MapPin, ScanLine } from 'lucide-react';
+import { ArrowRight, AudioLines, Clock, MapPin, ScanLine } from 'lucide-react';
 import { ImageWithFallback } from '@/components/ImageWithFallback';
 import { DemoQRCode } from '@/components/DemoQRCode';
 import { ServiceCatalogue } from './ServiceCatalogue';
@@ -88,9 +88,16 @@ export function GuestHome() {
           </div>
 
           <div className="mt-8 flex flex-wrap items-center gap-3">
+            <Link
+              to="/guest/music"
+              className="inline-flex h-[52px] items-center gap-2.5 rounded-[3px] bg-gold-500 px-7 text-[15px] font-semibold text-ink-950 shadow-lift transition-colors hover:bg-gold-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-300"
+            >
+              <AudioLines className="h-4 w-4" strokeWidth={2} />
+              Request a song
+            </Link>
             <a
               href="#services"
-              className="inline-flex h-[52px] items-center gap-2.5 rounded-[3px] bg-gold-500 px-7 text-[15px] font-semibold text-ink-950 shadow-lift transition-colors hover:bg-gold-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-300"
+              className="inline-flex h-[52px] items-center gap-2.5 rounded-[3px] border border-white/30 bg-white/[0.08] px-7 text-[15px] font-medium text-ivory-100 backdrop-blur-sm transition-colors hover:border-white/50 hover:bg-white/[0.14] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-500"
             >
               Explore the experiences
               <ArrowRight className="h-4 w-4" strokeWidth={2} />

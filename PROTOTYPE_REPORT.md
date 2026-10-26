@@ -15,15 +15,17 @@ Unofficial concept demonstration · frontend prototype · October 2026
 A high-fidelity, fully interactive frontend prototype of two connected hotel
 experiences sharing **one live state** with no refresh anywhere in either flow:
 
-- **Feature A — Live Music Requests.** A guest reaches the music screen from a
-  venue QR card, searches the catalogue by title/artist/genre or by category
-  (Bollywood, English Pop, Romantic, Jazz, Classics, Party Music), requests a
-  track with an optional dedication, and votes on the approved queue. The
-  performer/DJ console accepts, defers or rejects, manages the running order,
-  moderates dedications, marks tracks `Playing → Played`, and adjusts demo rules
-  (request limit, voting on/off, pause/resume). Statuses are `Submitted`,
-  `Accepted` (+`Deferred`), `Queued`, `Playing`, `Played`, `Rejected` — all
-  staff-managed.
+- **Feature A — Live Music Requests.** A guest reaches the music screen by
+  scanning the QR code on their **table tent** — the link's `?loc=` value opens
+  the page already sitting at that table — then searches the catalogue by
+  title/artist/genre or by category (Bollywood, English Pop, Romantic, Jazz,
+  Classics, Party Music), requests a track with an optional dedication, and votes
+  on the approved queue. A five-step progress indicator
+  (`Submitted → Accepted → Queued → Playing → Played`) shows where each request
+  stands. The performer/DJ console accepts, defers or rejects, manages the
+  running order, moderates dedications, marks tracks `Playing → Played`, and
+  adjusts demo rules (request limit, voting on/off, pause/resume). Statuses are
+  all staff-managed.
 - **Feature B — Celebration Music & Entertainment Enquiries.** A structured
   enquiry form (occasion, date + start time, duration, guest count, venue,
   entertainment preference, genre, special requests/songs/dedications/
@@ -67,10 +69,18 @@ Recharts · React Router 7. **No dependencies were added or removed in this refa
 
 ### Guest experience (QR / phone entry, mobile-first)
 
+Entry is **table-first**: the demo session starts at a restaurant or lounge
+table (`table-08` by default), and any guest URL accepts `?loc=<table-id>` the
+way a scanned table-tent QR would — e.g. `/guest/music?loc=table-12` opens at
+Table 12 and clears the parameter. Guest-visible locations are `table-01`,
+`table-08`, `table-12`, `lounge-table-04`, `lobby-lounge` and `pool-table-03`;
+room records remain in the code only as hidden legacy entries for the archived
+service dashboards and appear on no guest or focus staff screen.
+
 | Route | Screen |
 | --- | --- |
-| `/guest` | Guest home — the two focus experiences + shortcut to My requests |
-| `/guest/music` | **Feature A** — categories, search, now playing, approved queue + votes, QR venue card, your-requests status strip, pause/limit/declined notices |
+| `/guest` | Guest home — gold **“Request a song”** CTA, the two focus experiences + shortcut to My requests |
+| `/guest/music` | **Feature A** — search first (title/artist/genre + category chips), now playing, your requests with progress steps, approved queue + votes, table QR card, pause/limit/declined notices |
 | `/guest/occasions` | **Feature B** — celebration enquiry form (alias `/guest/celebration` redirects here) |
 | `/guest/my-requests` | This session's song requests **and** celebration enquiries with live statuses |
 | `/guest/my-requests/:ref` | Full timeline, read-only (guests cannot change statuses) |
@@ -114,7 +124,8 @@ Recharts · React Router 7. **No dependencies were added or removed in this refa
 4. Queue row → **Play now** (disabled while another track plays) → on stage →
    **Mark as played**.
 5. Back on the guest screen: the same request walks `Submitted → Queued →
-   Playing → Played`; My requests and the detail timeline agree, no refresh.
+   Playing → Played`; My requests, the detail timeline **and the five-step
+   progress indicator** agree, no refresh.
 
 Guest-side rule feedback: "requests are paused" notice and disabled sends when the
 performer pauses; a request-limit notice at 2 open requests; a declined-requests
@@ -143,17 +154,19 @@ notice with each rejection's reason visible in the request detail.
 | `src/features/entertainment/StageDashboard.tsx` | **Feature A** performer/DJ console |
 | `src/features/events/EventsDashboard.tsx` | **Feature B** events/banquet dashboard |
 | `src/features/events/EnquiryDrawer.tsx` | Enquiry detail: workflow actions, assignment, package, notes, timeline |
+| `src/components/RequestSteps.tsx` | Five-step guest progress indicator (compact dots + full stepper, `Declined` treatment) |
 
 ### 5.2 Substantially rewritten
 
 | File | Change |
 | --- | --- |
-| `src/data/requests.ts` | Seeds rewritten: 14 music-focused requests covering all six statuses + deferred + hidden dedication + demo-guest Queued/Played/Rejected; 6 retained non-music records for the hidden dashboards; music/events notifications |
+| `src/data/requests.ts` | Seeds rewritten: 14 music-focused requests covering all six statuses + deferred + hidden dedication, **all at tables/venues** (demo guest sits at Table 08); 6 retained non-music records (rooms, hidden dashboards); music/events notifications |
+| `src/data/property.ts` | **Table-first locations**: `LOCATIONS` rewritten to six tables/venues, rooms retained as `hidden` entries, `GUEST_LOCATIONS`, `DEFAULT_LOCATION_ID = 'table-08'`, `locationFromSearch()` for `?loc=` QR entry |
 | `src/data/music.ts` | 6-category `SONG_CATEGORIES`, ~49-song `SONG_CATALOGUE`, `DEFAULT_MUSIC_RULES` |
-| `src/features/guest/MusicRequests.tsx` | Categories, search, rules notices, status strip, QR card, dedication moderation markers, declined feedback |
+| `src/features/guest/MusicRequests.tsx` | **Search-first order** (search + categories directly under Now playing), table chip in the header, table-aware QR card (`/guest/music?loc=…`), compact progress steps in "Your requests", rules notices, dedication moderation markers, declined feedback |
 | `src/features/guest/ServiceCatalogue.tsx` | Two focus cards + standalone "My requests" tile (old catalogue retained in data) |
 | `src/App.tsx` | Focus-only guest routes, alias, two static staff routes, `/staff` → entertainment |
-| `src/store/RequestsProvider.tsx` | `STATE_VERSION = 2`; new slice: enquiries, demo music rules, enquiry sequence; 8 new actions (create/status/note/assign/proposal/stage/dedication/music-rules) with notifications; `setStage`, `setDedicationHidden` |
+| `src/store/RequestsProvider.tsx` | `STATE_VERSION = 3` (re-seeds older demos with table data); reads `?loc=` on load to set the scanned table and clears the parameter; slice: enquiries, demo music rules, enquiry sequence; 8 new actions (create/status/note/assign/proposal/stage/dedication/music-rules) with notifications; `setStage`, `setDedicationHidden`, `setLocation` restricted to guest locations |
 
 ### 5.3 Adapted (shared components/layouts touched)
 
@@ -170,12 +183,13 @@ notice with each rejection's reason visible in the request detail.
 | `src/components/ui/Field.tsx` | `SelectInput` gained a `dark` variant (staff dashboards) |
 | `src/components/ui/Feedback.tsx` | `SuccessPanel` gained optional `eyebrow` |
 | `src/layouts/StaffLayout.tsx` | Rail shows the two focus desks; open-count includes open enquiries |
-| `src/layouts/GuestLayout.tsx` | Nav "Home / My requests"; footer Experiences column |
+| `src/layouts/GuestLayout.tsx` | Nav "Home / My requests"; footer Experiences column; mobile header cluster now shrinks instead of overflowing narrow phones |
+| `src/components/LocationSwitcher.tsx` | Table/venue-only list (`GUEST_LOCATIONS`), "Your table or venue" wording, shrinkable chip |
 | `src/layouts/KioskLayout.tsx`, `src/features/kiosk/*` | Copy + focus gate (`FOCUS_SERVICE_IDS`) |
 | `src/hooks/useActiveDepartment.ts` | Default → `entertainment` |
 | `src/components/PrototypeRibbon.tsx` | Ops path → staff dashboards; focus copy |
 | `src/features/admin/AdminDashboard.tsx` | Legend `Declined → Rejected` |
-| `src/features/guest/{MyRequests,RequestDetail,GuestHome,ServiceShell}.tsx` | Enquiry section; cancel action **removed**; focus copy |
+| `src/features/guest/{MyRequests,RequestDetail,GuestHome,ServiceShell}.tsx` | Enquiry section; cancel action **removed**; focus copy; full progress stepper on music request details; gold "Request a song" hero CTA; `LocationControl` in the music page header |
 | `src/utils/format.ts` | `isoDateLabel` helper |
 
 ### 5.4 Deleted (only what the plan superseded)
@@ -201,8 +215,9 @@ dependencies were added.
 
 | Capability | State |
 | --- | --- |
-| Both workflows, guest ↔ staff, shared live state, localStorage (v2), reset controls | **Working** (frontend-only demo) |
+| Both workflows, guest ↔ staff, shared live state, localStorage (v3), reset controls | **Working** (frontend-only demo) |
 | Search, categories, voting, request limits, pause, dedication moderation, workflow transitions, assignment, internal notes, sample packages, filters | **Working** (on shared local state) |
+| Table-tent QR entry (`?loc=<table-id>` sets the session table) | **Working** (frontend simulation — no external encoder, no guest identity) |
 | QR entry points | **Simulated** — illustrative QR codes that open this local prototype (no external encoder) |
 | Staff access control | **Simulated only** — no authentication/authorization exists; every staff screen says so |
 | Availability, pricing, quotations, booking confirmation | **Never claimed** — packages are sample data with indicative INR figures; no availability UI exists anywhere |
@@ -225,9 +240,11 @@ dependencies were added.
 | Kiosk focus gate | ✅ `/kiosk/housekeeping` → "Service not available"; `/kiosk/occasions` renders the form |
 | Retained dashboards | ✅ `/staff/housekeeping` renders while the rail shows only the two focus desks |
 | `/staff` redirect | ✅ lands on Live Music Desk |
-| Guest home / kiosk home focus | ✅ only the two experiences + My requests; no stray service links |
+| Guest home / kiosk home focus | ✅ only the two experiences + My requests; no stray service links; gold **“Request a song”** CTA leads to `/guest/music` |
+| Table-first entry | ✅ `/guest?loc=table-12` sets the session to Table 12 and clears the parameter; location control lists only the six tables/venues; **no `Room …` text** on any guest route, the Live Music Desk or Events & Banquets |
+| Progress stepper | ✅ request detail walks `Submitted → Accepted → Queued → Playing → Played` as staff act; music list shows the compact form; a rejected request shows *Submitted → Declined* |
 | Admin legend | ✅ `Rejected` (was `Declined`); 19 Recharts surfaces render |
-| Horizontal overflow @ 800 px | ✅ none on `/guest`, `/guest/music`, `/guest/occasions`, `/guest/my-requests`, `/staff/entertainment`, `/staff/events` |
+| Horizontal overflow @ 390 px (mobile) | ✅ none on `/guest`, `/guest/music`, `/guest/occasions`, `/guest/my-requests`, `/guest/my-requests/:ref`, `/staff/entertainment`, `/staff/events`, `/kiosk/housekeeping` |
 | Design tokens | ✅ Cormorant Garamond display + Inter UI, ivory `rgb(252,250,246)` / ink palette intact |
 | `robots.txt` | ✅ present, noindexes the prototype |
 
@@ -240,12 +257,16 @@ browser E2E plus strict type-checking and production build.
 
 ## 8. Demo script (5 minutes)
 
-1. Open `/guest` → two cards: **Live music tonight** and **Plan a celebration**.
-2. `/guest/music` → pick category **Jazz** → search "Fly" → Choose → add a
-   dedication → Send → note the reference.
+1. Open `/guest` (or scan the table QR — `…/guest?loc=table-08`) → gold
+   **Request a song** button + two cards: **Live music tonight** and **Plan a
+   celebration**.
+2. `/guest/music` → the search box is right under Now playing → pick category
+   **Jazz** → search "Fly" → Choose → add a dedication → Send → note the
+   reference.
 3. Ribbon → **Staff dashboards** → Live Music Desk → Accept → Add to queue →
    (if the stage is busy, Mark as played first) → Play now → Mark as played.
-4. Back to **Guest** → My requests → the same request now reads **Played**.
+4. Back to **Guest** → My requests → the same request now reads **Played**, with
+   every step of the progress indicator filled.
 5. `/guest/occasions` → fill a birthday at the Banquet hall → send → note the
    `CEL-…` reference and the "not a booking" confirmation.
 6. **Staff dashboards → Events & Banquets** → open the enquiry → assign,

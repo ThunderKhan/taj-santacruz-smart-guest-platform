@@ -71,6 +71,11 @@ export interface HotelLocation {
   detail: string;
   /** QR code value — points at this local prototype route only. */
   qrTarget: string;
+  /**
+   * Internal-only entries (legacy room records kept for reference) are never
+   * offered in guest switchers or printed on QR codes.
+   */
+  hidden?: boolean;
 }
 
 export interface GuestSession {

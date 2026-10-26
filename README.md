@@ -49,12 +49,35 @@ Other scripts:
 
 ## Main routes
 
+### Table-first QR entry
+
+Guests arrive by scanning the QR code printed on their **table tent**, so the
+demo session always starts at a table — never a hotel room:
+
+| Location id | Label | Where |
+| --- | --- | --- |
+| `table-01`, `table-08`, `table-12` | Table 01 / 08 / 12 | All Day Dining |
+| `lounge-table-04` | Lounge Table 04 | Lobby Lounge · live music |
+| `lobby-lounge` | Lobby Lounge | Ground level · venue QR |
+| `pool-table-03` | Poolside Table 03 | Level 6 · open air |
+
+- **Scanning = opening any guest URL with `?loc=<id>`**, e.g.
+  `http://localhost:5173/guest/music?loc=table-12`. The session switches to that
+  table and the parameter is cleared from the address bar. Unknown ids fall back
+  to the default table (`table-08`).
+- The music page carries the QR for your current table
+  (`/guest/music?loc=…`), a **“You’re at Table 08”** heading, and a control in
+  the page header to change table (demo tool).
+- Room numbers live only in the code as **hidden legacy records** for the
+  archived service dashboards — no guest screen, focus staff screen or QR shows
+  them.
+
 ### 1 — Guest experience (QR / phone entry)
 
 | Route | What it shows |
 | --- | --- |
-| `/guest` | Guest home: the two focus experiences + shortcut to My requests |
-| `/guest/music` | **Feature A**: categories, search, now playing, approved queue + votes, QR card, your-requests status strip, pause / limit / declined notices |
+| `/guest` | Guest home: gold **“Request a song”** CTA, the two focus experiences + shortcut to My requests |
+| `/guest/music` | **Feature A**: search first (title / artist / genre + category chips), now playing, your requests with progress steps, approved queue + votes, table QR card, pause / limit / declined notices |
 | `/guest/occasions` | **Feature B**: celebration enquiry form (alias: `/guest/celebration` → redirects here) |
 | `/guest/my-requests` | Live list of this session's song requests **and** celebration enquiries |
 | `/guest/my-requests/:ref` | Full timeline and detail — **read-only for guests** (no status controls) |
@@ -93,8 +116,9 @@ Other scripts:
 
 ### Feature A — Live Music Requests (guest → performer)
 
-1. On `/guest/music`, browse by category (**Bollywood, English Pop, Romantic,
-   Jazz, Classics, Party Music**) or search by title, artist or genre.
+1. Scan the table-tent QR (`/guest/music?loc=table-08`) — the screen opens
+   already sitting at **your table**. Search first, or browse by category
+   (**Bollywood, English Pop, Romantic, Jazz, Classics, Party Music**).
 2. Choose a track, optionally write a dedication, press **Send request** →
    you get a `TSH-…` reference and the status **Submitted**.
    *Demo rules apply: max 2 open requests per guest, and the performer can pause
@@ -110,6 +134,9 @@ Other scripts:
 
 Status vocabulary (staff-managed only): `Submitted → Accepted → Queued → Playing →
 Played`, plus `Rejected` (guest-facing explanation) and `Deferred` (accepted, held).
+The guest follows it on a **five-step progress indicator** — compact dots in the
+music page's “Your requests” list and the full labelled stepper on each request's
+detail page (a declined request shows *Submitted → Declined*).
 
 ### Feature B — Celebration Enquiries (guest → events desk)
 
@@ -135,7 +162,7 @@ Played`, plus `Rejected` (guest-facing explanation) and `Deferred` (accepted, he
 
 | Area | State |
 | --- | --- |
-| Both workflows above, guest ↔ staff, live shared state, `localStorage` persistence (v2) | **Working** (frontend only) |
+| Both workflows above, guest ↔ staff, live shared state, `localStorage` persistence (v3) | **Working** (frontend only) |
 | Voting, request limits, pause, dedication hold/approve, workflow transitions, assignment, internal notes, sample packages | **Working** (demo rules on shared local state) |
 | Presenter ribbon switcher, kiosk mode, reset controls, management dashboard | **Working** |
 | Staff authentication / role-based permissions | **Simulated only** — no auth exists; staff access is explicitly labelled as demonstration |
@@ -160,9 +187,10 @@ src/
 │   ├── requestEngine.ts    buildRequest / canTransition / applyTransition / labels
 │   └── enquiryEngine.ts    enquiry workflow: transitions, actions, labels, references
 ├── store/RequestsProvider  Reducer + context: requests, enquiries, demo music rules,
-│                           notifications, toasts, localStorage persistence (v2)
+│                           notifications, toasts, localStorage persistence (v3)
 ├── hooks/                  useDepartmentQueue, useActiveDepartment, useHomePath, …
-├── components/             Brand, imagery, QR, bell, ribbon, location switcher
+├── components/             Brand, imagery, QR, bell, ribbon, location switcher,
+│                           request progress steps (RequestSteps)
 │   └── ui/                 Button, Badge (Status/Enquiry), Panel, Field, Overlay,
 │                           Timeline (Request/Enquiry), Feedback, Toaster
 ├── layouts/                GuestLayout, KioskLayout, StaffLayout, AdminLayout
@@ -181,8 +209,9 @@ src/
 department wording (`queued`, `playing`, `played`, `deferred`, `preparing`, …).
 Enquiries have their own engine (`enquiryEngine.ts`) because their lifecycle and
 actor vocabulary differ from hotel requests. One localStorage key
-(`smart-guest-platform:v1`, `STATE_VERSION = 2`) holds both slices plus the demo
-music rules; seed timestamps re-anchor after 14 idle hours. Reset controls
+(`smart-guest-platform:v1`, `STATE_VERSION = 3`) holds both slices plus the demo
+music rules; the bump to v3 re-seeds older stored demos with the table-first
+location data, and seed timestamps re-anchor after 14 idle hours. Reset controls
 (ribbon, kiosk restart, footer) restore the seeded state.
 
 **Presenter ribbon.** A discreet, collapsible bar carries the prototype
@@ -212,10 +241,17 @@ Layouts compensate via `useRibbonOffset()`.
   `noUnusedParameters`, `verbatimModuleSyntax`).
 - `npm run build` — passes (vendor/charts/icons split into separate chunks).
 - Browser end-to-end, both workflows verified on the dev server:
+  - **Table-first entry:** `…/guest?loc=table-12` switches the session to Table 12
+    and clears the parameter; the location control lists only the six tables /
+    venues (no rooms); no `Room …` string appears on any guest route, on the
+    Live Music Desk or on Events & Banquets.
   - **Feature A:** search → category filter → request with dedication →
     `Submitted` on the guest screen → Accept → Add to queue (`Queued`) →
     Play now (disabled while another track plays) → Mark as played (`Played`) →
     guest sees `Played` in My requests, all without refresh.
+  - **Progress stepper:** the request detail walks `Submitted → Accepted →
+    Queued → Playing → Played` as staff act, the music page's list shows the
+    compact form (including a *Declined* marker for a rejected request).
   - **Feature B:** form → empty-submit validation (all 7 field errors) → filled
     submission → `CEL-3300` reference + confirmation + disclaimers → events
     dashboard → drawer: assignment, internal note, sample package →
@@ -228,9 +264,10 @@ Layouts compensate via `useRibbonOffset()`.
     shows only the two focus desks; `/staff` redirects to the Live Music Desk.
   - Demo rules: pausing requests on the stage desk blocks guest submissions with
     an on-page notice; voting increments/decrements correctly.
-  - No horizontal overflow at 800px on `/guest`, `/guest/music`,
-    `/guest/occasions`, `/guest/my-requests`, `/staff/entertainment`,
-    `/staff/events`.
+  - **No horizontal overflow at 390 px** (mobile) on `/guest`, `/guest/music`,
+    `/guest/occasions`, `/guest/my-requests`, `/guest/my-requests/:ref`,
+    `/staff/entertainment`, `/staff/events`, `/kiosk/housekeeping` — the guest
+    header's location chip now shrinks instead of pushing the page sideways.
 - `public/robots.txt` noindexes the prototype.
 
 See `PROTOTYPE_REPORT.md` for the full report: changed files, retained/hidden

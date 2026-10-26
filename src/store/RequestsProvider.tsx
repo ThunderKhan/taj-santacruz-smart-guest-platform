@@ -21,7 +21,7 @@ import type {
   RequestStatus,
   ServiceRequest,
 } from '@/types';
-import { DEFAULT_LOCATION_ID, LOCATIONS, findLocation } from '@/data/property';
+import { DEFAULT_LOCATION_ID, GUEST_LOCATIONS, findLocation, locationFromSearch } from '@/data/property';
 import { buildSeed, DEMO_GUEST_NAME, DEMO_GUEST_REF } from '@/data/requests';
 import { buildEnquirySeed } from '@/data/celebrations';
 import { DEFAULT_MUSIC_RULES } from '@/data/music';
@@ -47,7 +47,8 @@ import {
 /* -------------------------------------------------------------------------- */
 
 const STORAGE_KEY = 'smart-guest-platform:v1';
-const STATE_VERSION = 2;
+/** Bumped to 3 for the table-first rewrite — older stored demos reseed. */
+const STATE_VERSION = 3;
 /** Re-anchor seeded timestamps if the prototype has been left idle this long. */
 const REANCHOR_AFTER_MS = 14 * 60 * 60 * 1000;
 
@@ -110,6 +111,35 @@ function createInitialState(now: number): PersistedState {
 }
 
 function loadState(now: number): PersistedState {
+  return applyScannedLocation(readPersisted(now));
+}
+
+/**
+ * A table-tent QR code carries `?loc=<table-id>`. When present it decides the
+ * session location — the guest "arrived" by scanning their table — and the
+ * parameter is stripped so later navigation keeps the chosen table.
+ */
+function applyScannedLocation(state: PersistedState): PersistedState {
+  if (typeof window === 'undefined') return state;
+  const params = new URLSearchParams(window.location.search);
+  if (!params.has('loc')) return state;
+
+  const locationId = locationFromSearch(window.location.search);
+  params.delete('loc');
+  const query = params.toString();
+  try {
+    window.history.replaceState(
+      null,
+      '',
+      `${window.location.pathname}${query ? `?${query}` : ''}${window.location.hash}`,
+    );
+  } catch {
+    // History may be unavailable in embedded previews — the location still applies.
+  }
+  return { ...state, session: { ...state.session, locationId, entry: 'qr' } };
+}
+
+function readPersisted(now: number): PersistedState {
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return createInitialState(now);
@@ -575,7 +605,7 @@ function reducer(state: PersistedState, action: Action): PersistedState {
       return { ...state, musicRules: { ...state.musicRules, ...action.rules } };
 
     case 'setLocation': {
-      if (!LOCATIONS.some((location) => location.id === action.locationId)) return state;
+      if (!GUEST_LOCATIONS.some((location) => location.id === action.locationId)) return state;
       return { ...state, session: { ...state.session, locationId: action.locationId } };
     }
 
