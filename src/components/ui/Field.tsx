@@ -1,11 +1,46 @@
 import { useId, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from 'react';
 import { cx } from '@/utils/format';
 
-const CONTROL =
-  'w-full rounded-[3px] border bg-white text-[14.5px] text-ink-900 placeholder:text-warm-400 ' +
+/** Shared geometry: size, transition and focus ring. Colour comes from `controlSkin`. */
+const CONTROL_BASE =
+  'w-full rounded-[3px] border text-[14.5px] ' +
   'transition-[border-color,box-shadow] duration-150 ' +
-  'focus:border-gold-600 focus:outline-none focus:ring-2 focus:ring-gold-500/25 ' +
-  'disabled:cursor-not-allowed disabled:bg-warm-50 disabled:text-warm-500';
+  'focus:outline-none focus:ring-2 focus:ring-gold-500/25 ' +
+  'disabled:cursor-not-allowed';
+
+/**
+ * Colour skin for a control — light and dark are chosen here, never layered.
+ *
+ * When two same-property utilities land on one element (say `bg-white` from a
+ * base string plus `bg-ink-800` appended for dark mode) Tailwind settles the
+ * collision by stylesheet order, not by the order they appear in `class`. The
+ * white fill happened to sort last while the text colour went the other way,
+ * which left the console fields as white boxes with near-white text. Building
+ * one exclusive string per surface removes the ambiguity entirely.
+ *
+ * `[color-scheme:dark]` keeps native browser parts (select dropdowns, pickers,
+ * scrollbars) on dark system colours so option lists stay readable.
+ */
+function controlSkin({ dark = false, invalid = false }: { dark?: boolean; invalid?: boolean } = {}) {
+  return cx(
+    invalid
+      ? dark
+        ? 'border-clay-400'
+        : 'border-clay-500'
+      : dark
+        ? 'border-white/15'
+        : 'border-cream-300',
+    dark
+      ? 'bg-ink-800 text-ivory-100 placeholder:text-warm-400 [color-scheme:dark] ' +
+        'focus:border-gold-500 ' +
+        'disabled:bg-ink-850 disabled:text-warm-500'
+      : 'bg-white text-ink-900 placeholder:text-warm-400 ' +
+        'focus:border-gold-600 ' +
+        'disabled:bg-warm-50 disabled:text-warm-500',
+    // Hover lift only when there is no error to keep visible.
+    !invalid && dark && 'hover:border-white/25',
+  );
+}
 
 /** Label + control + hint/error, with correct association for screen readers. */
 export function Field({
@@ -35,8 +70,15 @@ export function Field({
         htmlFor={id}
         className={cx(
           'eyebrow-sm mb-2 block',
-          dark ? 'text-warm-400' : 'text-warm-600',
-          error && 'text-clay-600',
+          // One colour only — layering `text-clay-600` over the muted tone is
+          // the same stylesheet-order gamble as the control skins above.
+          error
+            ? dark
+              ? 'text-clay-400'
+              : 'text-clay-600'
+            : dark
+              ? 'text-warm-400'
+              : 'text-warm-600',
         )}
       >
         {label}
@@ -52,7 +94,14 @@ export function Field({
           id={messageId}
           className={cx(
             'mt-1.5 text-[12.5px] leading-snug',
-            error ? 'text-clay-600' : dark ? 'text-warm-500' : 'text-warm-600',
+            // clay-600 is tuned for ivory pages; on ink it collapses to ~2:1.
+            error
+              ? dark
+                ? 'text-clay-400'
+                : 'text-clay-600'
+              : dark
+                ? 'text-warm-500'
+                : 'text-warm-600',
           )}
         >
           {error ?? hint}
@@ -64,20 +113,29 @@ export function Field({
 
 export function TextInput({
   invalid,
+  dark = false,
   className,
   ...rest
-}: InputHTMLAttributes<HTMLInputElement> & { invalid?: boolean }) {
-  return <input className={cx(CONTROL, 'h-11 px-3.5', invalid && 'border-clay-500', className)} {...rest} />;
+}: InputHTMLAttributes<HTMLInputElement> & { invalid?: boolean; dark?: boolean }) {
+  return (
+    <input className={cx(CONTROL_BASE, controlSkin({ dark, invalid }), 'h-11 px-3.5', className)} {...rest} />
+  );
 }
 
 export function TextArea({
   invalid,
+  dark = false,
   className,
   ...rest
-}: TextareaHTMLAttributes<HTMLTextAreaElement> & { invalid?: boolean }) {
+}: TextareaHTMLAttributes<HTMLTextAreaElement> & { invalid?: boolean; dark?: boolean }) {
   return (
     <textarea
-      className={cx(CONTROL, 'min-h-[104px] resize-y px-3.5 py-2.5 leading-relaxed', invalid && 'border-clay-500', className)}
+      className={cx(
+        CONTROL_BASE,
+        controlSkin({ dark, invalid }),
+        'min-h-[104px] resize-y px-3.5 py-2.5 leading-relaxed',
+        className,
+      )}
       {...rest}
     />
   );
@@ -93,14 +151,7 @@ export function SelectInput({
   return (
     <div className="relative">
       <select
-        className={cx(
-          CONTROL,
-          'h-11 appearance-none pl-3.5 pr-9',
-          invalid && 'border-clay-500',
-          dark &&
-            'border-white/15 bg-ink-850 text-ivory-100 placeholder:text-warm-400 hover:border-white/25 focus:border-gold-500',
-          className,
-        )}
+        className={cx(CONTROL_BASE, controlSkin({ dark, invalid }), 'h-11 appearance-none pl-3.5 pr-9', className)}
         {...rest}
       >
         {children}
@@ -154,11 +205,7 @@ export function SearchInput({
         onChange={(event) => onValueChange(event.target.value)}
         placeholder={placeholder}
         aria-label={placeholder}
-        className={cx(
-          CONTROL,
-          'h-10 pl-9 pr-9 text-sm',
-          dark && 'border-white/15 bg-white/[0.06] text-ivory-100 placeholder:text-warm-500',
-        )}
+        className={cx(CONTROL_BASE, controlSkin({ dark }), 'h-10 pl-9 pr-9 text-sm')}
       />
       {value ? (
         <button

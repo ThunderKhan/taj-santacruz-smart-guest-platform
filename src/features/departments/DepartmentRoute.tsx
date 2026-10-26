@@ -17,7 +17,7 @@ import { findDepartment, staffFor } from '@/data/departments';
 import { ImageWithFallback } from '@/components/ImageWithFallback';
 import { Badge, CountChip, PriorityBadge, StatusBadge } from '@/components/ui/Badge';
 import { StatTile } from '@/components/ui/Panel';
-import { SegmentedControl, SelectInput } from '@/components/ui/Field';
+import { SegmentedControl, SelectInput, TextInput } from '@/components/ui/Field';
 import { Drawer } from '@/components/ui/Overlay';
 import { EmptyState, Notice } from '@/components/ui/Feedback';
 import { Button } from '@/components/ui/Button';
@@ -460,12 +460,12 @@ function StatusActions({
           <div className="flex flex-wrap items-center gap-2.5">
             <div className="min-w-[210px] flex-1">
               <SelectInput
+                dark
                 aria-label="Assign to team member"
                 value=""
                 onChange={(event) => {
                   if (event.target.value) onAssign(event.target.value);
                 }}
-                className="h-9 border-white/15 bg-white/[0.06] text-ivory-100"
               >
                 <option value="">Assign to…</option>
                 {staff.map((person) => (
@@ -482,12 +482,12 @@ function StatusActions({
           </div>
 
           <div>
-            <input
+            <TextInput
+              dark
               value={note}
               onChange={(event) => setNote(event.target.value)}
               placeholder="Optional note added to the guest timeline…"
               aria-label="Note added to the timeline"
-              className="h-9 w-full rounded-[3px] border border-white/15 bg-white/[0.06] px-3 text-[13.5px] text-ivory-100 placeholder:text-warm-500 focus:border-gold-500 focus:outline-none"
             />
           </div>
         </>

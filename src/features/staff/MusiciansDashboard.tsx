@@ -173,16 +173,17 @@ export function MusiciansDashboard() {
         <div>
           <Panel dark className="lg:sticky lg:top-24">
             <SectionHeading
+              dark
               eyebrow="New account"
               title="Add a musician"
               description="They can sign in straight away with the username shown after saving."
             />
             <form className="mt-4 space-y-4" onSubmit={submit}>
-              <Field label="Name" error={error} required>
+              <Field label="Name" error={error} required dark>
                 {(props) => (
                   <TextInput
                     {...props}
-                    className="border-white/15 bg-ink-850 text-ivory-100 placeholder:text-warm-400 hover:border-white/25 focus:border-gold-500"
+                    dark
                     placeholder="e.g. Tara Menon"
                     value={name}
                     onChange={(event) => {
@@ -192,7 +193,7 @@ export function MusiciansDashboard() {
                   />
                 )}
               </Field>
-              <Field label="Stage role" required>
+              <Field label="Stage role" required dark>
                 {(props) => (
                   <SelectInput {...props} dark value={role} onChange={(event) => setRole(event.target.value)}>
                     {MUSICIAN_ROLES.map((option) => (
