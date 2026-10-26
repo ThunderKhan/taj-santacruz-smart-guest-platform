@@ -15,13 +15,12 @@ export default defineConfig({
     host: true,
   },
   build: {
-    // Keep the initial payload sensible — charts and icons are split out so the
-    // guest experience does not download the management dashboard's libraries.
+    // Keep the initial payload sensible — vendor and icons are split out so the
+    // guest experience does not download them on every page.
     rollupOptions: {
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom', 'react-router-dom'],
-          charts: ['recharts'],
           icons: ['lucide-react'],
         },
       },

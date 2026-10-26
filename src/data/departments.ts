@@ -111,7 +111,7 @@ export const DEPARTMENT_IDS = DEPARTMENTS.map((department) => department.id);
  * The remaining queues are retained (routes still resolve by URL) but hidden
  * from staff navigation until they are needed again.
  */
-export const FOCUS_DEPARTMENTS: DepartmentId[] = ['entertainment', 'events'];
+export const FOCUS_DEPARTMENTS: DepartmentId[] = ['events'];
 
 export function findDepartment(id: DepartmentId): Department {
   return DEPARTMENTS.find((department) => department.id === id) ?? DEPARTMENTS[0];

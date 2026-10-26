@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { ChartColumn, ChevronDown, ClipboardList, RotateCcw, Sparkles, Tablet } from 'lucide-react';
+import { AudioLines, ChevronDown, ClipboardList, RotateCcw, Sparkles, Tablet } from 'lucide-react';
 import { useRequests } from '@/store/RequestsProvider';
+import { useAuth } from '@/store/AuthProvider';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Overlay';
 import { cx } from '@/utils/format';
 import { PROPERTY } from '@/data/property';
 
-type Area = 'guest' | 'ops' | 'admin';
+type Area = 'guest' | 'staff' | 'musician';
 
 const AREAS: Array<{
   id: Area;
@@ -17,40 +18,42 @@ const AREAS: Array<{
   Icon: typeof Sparkles;
 }> = [
   { id: 'guest', label: 'Guest experience', short: 'Guest', path: '/guest', Icon: Sparkles },
-  { id: 'ops', label: 'Staff dashboards', short: 'Staff', path: '/staff/entertainment', Icon: ClipboardList },
-  { id: 'admin', label: 'Hotel management', short: 'Management', path: '/admin', Icon: ChartColumn },
+  { id: 'staff', label: 'Staff desk', short: 'Staff', path: '/staff', Icon: ClipboardList },
+  { id: 'musician', label: 'Singer console', short: 'Singer', path: '/musician', Icon: AudioLines },
 ];
 
 /**
  * Presenter ribbon.
  *
- * Sits above every route so a presenter can switch between the three demo
- * experiences. Deliberately styled as a review tool — it is not presented as
- * a feature available to hotel guests, and it carries the prototype disclosure.
+ * Sits above every route so a presenter can switch between the demo
+ * experiences: the guest QR journey plus the two signed-in consoles (staff and
+ * performer — each with its own demo sign-in). Deliberately styled as a review
+ * tool, and it carries the prototype disclosure.
  */
 export function PrototypeRibbon() {
   const navigate = useNavigate();
   const location = useLocation();
   const { ribbonCollapsed, setRibbonCollapsed, resetDemo } = useRequests();
+  const { session } = useAuth();
   const [confirmReset, setConfirmReset] = useState(false);
-  const lastOpsPath = useRef('/staff/entertainment');
+  const lastStaffPath = useRef('/staff');
+  const lastMusicianPath = useRef('/musician');
 
-  const isOps = location.pathname.startsWith('/staff');
+  const isStaff = location.pathname.startsWith('/staff');
+  const isMusician = location.pathname.startsWith('/musician');
   const isKiosk = location.pathname.startsWith('/kiosk');
-  const area: Area = location.pathname.startsWith('/admin')
-    ? 'admin'
-    : isOps
-      ? 'ops'
-      : 'guest';
+  const area: Area = isStaff ? 'staff' : isMusician ? 'musician' : 'guest';
 
   useEffect(() => {
-    if (isOps) lastOpsPath.current = location.pathname;
-  }, [isOps, location.pathname]);
+    if (isStaff) lastStaffPath.current = location.pathname;
+    if (isMusician) lastMusicianPath.current = location.pathname;
+  }, [isStaff, isMusician, location.pathname]);
 
   const go = (target: Area) => {
+    // Unguarded visits land on the demo sign-in; guarded ones go straight in.
     if (target === 'guest') navigate('/guest');
-    else if (target === 'ops') navigate(lastOpsPath.current);
-    else navigate('/admin');
+    else if (target === 'staff') navigate(session?.role === 'staff' ? lastStaffPath.current : '/login');
+    else navigate(session?.role === 'musician' ? lastMusicianPath.current : '/login');
   };
 
   if (ribbonCollapsed) {
@@ -80,7 +83,7 @@ export function PrototypeRibbon() {
             </span>
             <span aria-hidden="true" className="hidden h-3 w-px bg-white/15 lg:block" />
             <span className="hidden truncate text-[11.5px] text-warm-500 lg:block">
-              {PROPERTY.name} · not a live Taj system
+              {PROPERTY.name} · independent concept demo
             </span>
           </div>
 

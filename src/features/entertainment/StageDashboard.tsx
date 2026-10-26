@@ -15,13 +15,16 @@ import { cx } from '@/utils/format';
 import type { ServiceRequest } from '@/types';
 
 /**
- * Live Music Desk — the performer / DJ console (Feature A, staff side).
+ * Live Music Desk — the singer console (Feature A, performer side).
  *
- * A staff-only view of the same shared state the guest music screen reads.
- * Incoming requests can be accepted, deferred or rejected; the approved queue
- * can be reordered by promoting tracks to the stage; dedications can be held
- * back from the public view; and demo rules (pause, request limits, voting)
- * are adjustable live. Guests never see this screen or any status controls.
+ * A performer-only view of the same shared state the guest music screen reads.
+ * The performer decides which requests to accept, orders the queue, plays and
+ * marks tracks, moderates dedications and tunes the demo rules — staff never
+ * see this queue. Incoming requests can be accepted, deferred or rejected; the
+ * approved queue can be reordered by promoting tracks to the stage; dedications
+ * can be held back from the public view; and demo rules (pause, request limits,
+ * voting) are adjustable live. Guests never see this screen or any status
+ * controls.
  */
 export function StageDashboard() {
   const {
@@ -114,7 +117,7 @@ export function StageDashboard() {
             <div className="min-w-0">
               <p className={cx('eyebrow flex items-center gap-2', DEPARTMENT_ACCENT.entertainment)}>
                 <Icon className="h-3.5 w-3.5" strokeWidth={1.8} />
-                Performer console · staff only
+                Singer console · performers only
               </p>
               <h1 className="display mt-3 text-[clamp(1.6rem,3.2vw,2.3rem)] text-ivory-50">
                 {meta.name}

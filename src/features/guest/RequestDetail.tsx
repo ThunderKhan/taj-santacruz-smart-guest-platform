@@ -121,8 +121,9 @@ export function RequestDetail() {
 
           <Notice className="mt-5" tone="gold" title="Updates without refreshing">
             <p>
-              This screen reads the shared prototype state — switch to {departmentName(request.department)}{' '}
-              operations, advance the request, and the timeline above gains a new entry immediately.
+              This screen reads the shared prototype state — switch to{' '}
+              {request.service === 'music' ? 'the singer console' : `${departmentName(request.department)} operations`}
+              , advance the request, and the timeline above gains a new entry immediately.
             </p>
           </Notice>
         </div>

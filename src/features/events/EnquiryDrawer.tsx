@@ -20,22 +20,29 @@ import { fullTimestamp, isoDateLabel, relativeTime } from '@/utils/format';
 import type { CelebrationEnquiry, EnquiryStatus } from '@/types';
 
 /**
- * Enquiry detail drawer for the events & banquet desk.
+ * Enquiry detail drawer.
  *
- * Staff advance the workflow (New → Under Review → Need More Information →
- * Proposal Sent → Confirmed / Closed), add internal notes, assign a colleague
- * and attach a sample package. Confirmed and closed are end states; every
- * status is visible to the guest with matching wording, so the note field is
- * marked internal.
+ * Two audiences, one component:
+ *
+ * - **Events desk** (default) — advance the workflow (New → Under Review → Need
+ *   More Information → Proposal Sent → Confirmed / Closed), add internal notes,
+ *   assign a colleague and a performer, and attach a sample package.
+ * - **Singer console** (`readOnly`) — the assigned performer sees the facts,
+ *   special requests and status history, but never the workflow controls or the
+ *   desk's internal notes.
  */
 export function EnquiryDrawer({
   enquiry,
   onClose,
+  readOnly = false,
 }: {
   enquiry: CelebrationEnquiry | null;
   onClose: () => void;
+  /** True in the musician console: no workflow, notes or assignment controls. */
+  readOnly?: boolean;
 }) {
-  const { setEnquiryStatus, addEnquiryNote, assignEnquiry, proposeEnquiryPackage } = useRequests();
+  const { setEnquiryStatus, addEnquiryNote, assignEnquiry, proposeEnquiryPackage, assignMusician, musicians } =
+    useRequests();
   const [note, setNote] = useState('');
   const [packageId, setPackageId] = useState('');
 
@@ -80,7 +87,14 @@ export function EnquiryDrawer({
         {enquiry.seeded ? <Badge tone="neutral">Demo</Badge> : null}
       </div>
 
-      {terminal ? (
+      {readOnly ? (
+        <Notice tone="gold" title="Assigned to you" className="mt-4">
+          <p>
+            You are the assigned performer for this celebration. The events desk owns the enquiry
+            workflow — reach out to them if anything needs to change.
+          </p>
+        </Notice>
+      ) : terminal ? (
         <Notice
           tone={enquiry.status === 'confirmed' ? 'sage' : 'neutral'}
           title={
@@ -165,27 +179,81 @@ export function EnquiryDrawer({
         <SectionHeading
           eyebrow="Ownership"
           title="Assignment"
-          description="One colleague leads the enquiry; the whole desk can still see it."
+          description="One colleague leads the enquiry; a performer is assigned when the celebration needs music."
         />
-        <div className="mt-3 max-w-xs">
-          <SelectInput
-            value={enquiry.assignedTo ?? ''}
-            onChange={(event) => {
-              if (event.target.value) assignEnquiry(enquiry.id, event.target.value);
-            }}
-            aria-label="Assign this enquiry"
-          >
-            <option value="">Unassigned</option>
-            {staff.map((person) => (
-              <option key={person.id} value={person.name}>
-                {person.name} · {person.role}
-              </option>
-            ))}
-          </SelectInput>
+        <div className="mt-3 grid gap-4 sm:grid-cols-2">
+          <div>
+            <p className="eyebrow-sm mb-2 text-warm-600">Events desk owner</p>
+            {readOnly ? (
+              <p className="text-[14px] text-ink-900">
+                {enquiry.assignedTo ?? <span className="text-warm-500">Unassigned</span>}
+              </p>
+            ) : (
+              <SelectInput
+                value={enquiry.assignedTo ?? ''}
+                onChange={(event) => {
+                  if (event.target.value) assignEnquiry(enquiry.id, event.target.value);
+                }}
+                aria-label="Assign this enquiry to a colleague"
+              >
+                <option value="">Unassigned</option>
+                {staff.map((person) => (
+                  <option key={person.id} value={person.name}>
+                    {person.name} · {person.role}
+                  </option>
+                ))}
+              </SelectInput>
+            )}
+          </div>
+          <div>
+            <p className="eyebrow-sm mb-2 text-warm-600">Assigned performer</p>
+            {readOnly ? (
+              <p className="text-[14px] text-ink-900">
+                {enquiry.assignedMusician ?? (
+                  <span className="text-warm-500">Not assigned yet</span>
+                )}
+              </p>
+            ) : (
+              <SelectInput
+                value={enquiry.assignedMusicianId ?? ''}
+                onChange={(event) => assignMusician(enquiry.id, event.target.value || null)}
+                aria-label="Assign a performer to this enquiry"
+              >
+                <option value="">No performer yet</option>
+                {musicians.map((musician) => (
+                  <option key={musician.id} value={musician.id}>
+                    {musician.name} · {musician.role}
+                  </option>
+                ))}
+              </SelectInput>
+            )}
+            {!readOnly ? (
+              <p className="mt-1.5 text-[12px] leading-snug text-warm-500">
+                Assigned performers see the event, read-only, in their own console.
+              </p>
+            ) : null}
+          </div>
         </div>
       </Panel>
 
       {/* Sample package --------------------------------------------------- */}
+      {readOnly ? (
+        enquiry.proposedPackage ? (
+          <Panel className="mt-4">
+            <SectionHeading
+              eyebrow="Proposal"
+              title="Sample package"
+              description="Shared with the guest by the events desk — indicative only."
+            />
+            <div className="mt-3 rounded-[3px] border border-sage-500/40 bg-sage-500/12 px-4 py-3">
+              <p className="eyebrow-sm text-forest-700">Currently proposed</p>
+              <p className="mt-1.5 text-[13.5px] leading-relaxed text-forest-700">
+                {enquiry.proposedPackage}
+              </p>
+            </div>
+          </Panel>
+        ) : null
+      ) : (
       <Panel className="mt-4">
         <SectionHeading
           eyebrow="Proposal"
@@ -232,8 +300,10 @@ export function EnquiryDrawer({
           </p>
         )}
       </Panel>
+      )}
 
-      {/* Internal notes ---------------------------------------------------- */}
+      {/* Internal notes — staff only, never shown to performers or guests --- */}
+      {readOnly ? null : (
       <Panel className="mt-4">
         <SectionHeading
           eyebrow="Desk notes"
@@ -277,6 +347,7 @@ export function EnquiryDrawer({
           </div>
         </div>
       </Panel>
+      )}
 
       {/* Timeline ---------------------------------------------------------- */}
       <div className="mt-5 border-t border-cream-300 pt-5">

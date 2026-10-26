@@ -15,6 +15,7 @@ import type {
   GuestSession,
   HotelLocation,
   MusicRules,
+  Musician,
   NotificationAudience,
   RequestSource,
   RequestStage,
@@ -25,6 +26,7 @@ import { DEFAULT_LOCATION_ID, GUEST_LOCATIONS, findLocation, locationFromSearch 
 import { buildSeed, DEMO_GUEST_NAME, DEMO_GUEST_REF } from '@/data/requests';
 import { buildEnquirySeed } from '@/data/celebrations';
 import { DEFAULT_MUSIC_RULES } from '@/data/music';
+import { MUSICIAN_SEED, uniqueUsername, usernameFromName } from '@/data/musicians';
 import {
   applyTransition,
   buildRequest,
@@ -47,8 +49,8 @@ import {
 /* -------------------------------------------------------------------------- */
 
 const STORAGE_KEY = 'smart-guest-platform:v1';
-/** Bumped to 3 for the table-first rewrite — older stored demos reseed. */
-const STATE_VERSION = 3;
+/** Bumped to 4 for musicians + role log-ins — older stored demos reseed. */
+const STATE_VERSION = 4;
 /** Re-anchor seeded timestamps if the prototype has been left idle this long. */
 const REANCHOR_AFTER_MS = 14 * 60 * 60 * 1000;
 
@@ -60,6 +62,7 @@ interface PersistedState {
   session: GuestSession;
   requests: ServiceRequest[];
   enquiries: CelebrationEnquiry[];
+  musicians: Musician[];
   musicRules: MusicRules;
   notifications: AppNotification[];
   ribbonCollapsed: boolean;
@@ -104,6 +107,7 @@ function createInitialState(now: number): PersistedState {
     },
     requests: seed.requests,
     enquiries: buildEnquirySeed(now),
+    musicians: [...MUSICIAN_SEED],
     musicRules: { ...DEFAULT_MUSIC_RULES },
     notifications: seed.notifications,
     ribbonCollapsed: false,
@@ -156,8 +160,15 @@ function readPersisted(now: number): PersistedState {
     }
 
     const idleFor = now - parsed.seededAt;
-    if (idleFor > REANCHOR_AFTER_MS) return shiftTimestamps(parsed, idleFor);
-    return { ...parsed, musicRules: { ...DEFAULT_MUSIC_RULES, ...parsed.musicRules } };
+    const withDefaults: PersistedState = {
+      ...parsed,
+      musicRules: { ...DEFAULT_MUSIC_RULES, ...parsed.musicRules },
+      musicians: Array.isArray(parsed.musicians) && parsed.musicians.length > 0
+        ? parsed.musicians
+        : [...MUSICIAN_SEED],
+    };
+    if (idleFor > REANCHOR_AFTER_MS) return shiftTimestamps(withDefaults, idleFor);
+    return withDefaults;
   } catch {
     // Corrupt storage must never break the demo — fall back to a fresh seed.
     return createInitialState(now);
@@ -201,6 +212,16 @@ type Action =
     }
   | { type: 'enquiryNote'; id: string; note: { id: string; at: number; by: string; body: string }; now: number }
   | { type: 'enquiryAssign'; id: string; staff: string; by: string; now: number }
+  | {
+      type: 'enquiryMusicianAssign';
+      id: string;
+      musicianId: string | null;
+      musicianName: string | null;
+      by: string;
+      now: number;
+    }
+  | { type: 'createMusician'; musician: Musician }
+  | { type: 'deleteMusician'; id: string }
   | { type: 'enquiryProposal'; id: string; packageLabel: string; by: string; note?: string; now: number }
   | { type: 'setMusicRules'; rules: Partial<MusicRules> }
   | { type: 'setLocation'; locationId: string }
@@ -601,6 +622,50 @@ function reducer(state: PersistedState, action: Action): PersistedState {
       };
     }
 
+    case 'enquiryMusicianAssign': {
+      const target = state.enquiries.find((enquiry) => enquiry.id === action.id);
+      if (!target) return state;
+      const updated: CelebrationEnquiry = {
+        ...target,
+        assignedMusicianId: action.musicianId,
+        assignedMusician: action.musicianName,
+        updatedAt: action.now,
+        history: [
+          ...target.history,
+          {
+            status: target.status,
+            at: action.now,
+            by: action.by,
+            note: action.musicianName
+              ? `Performer assigned: ${action.musicianName}`
+              : 'Performer assignment cleared',
+          },
+        ],
+      };
+      return {
+        ...state,
+        enquiries: state.enquiries.map((enquiry) => (enquiry.id === action.id ? updated : enquiry)),
+        notifications: notify(state.notifications, [
+          enquiryStaffNotification(
+            updated,
+            action.musicianName
+              ? `${updated.ref} assigned to ${action.musicianName}`
+              : `${updated.ref} performer cleared`,
+            `${updated.occasion} · ${updated.venue}`,
+            action.now,
+          ),
+        ]),
+      };
+    }
+
+    case 'createMusician': {
+      if (state.musicians.some((musician) => musician.id === action.musician.id)) return state;
+      return { ...state, musicians: [...state.musicians, action.musician] };
+    }
+
+    case 'deleteMusician':
+      return { ...state, musicians: state.musicians.filter((musician) => musician.id !== action.id) };
+
     case 'setMusicRules':
       return { ...state, musicRules: { ...state.musicRules, ...action.rules } };
 
@@ -696,6 +761,14 @@ export interface RequestsApi {
   addEnquiryNote: (id: string, body: string, by?: string) => void;
   assignEnquiry: (id: string, staff: string, by?: string) => void;
   proposeEnquiryPackage: (id: string, packageLabel: string, by?: string, note?: string) => void;
+
+  /** Performer accounts — managed by staff from the Musicians desk. */
+  musicians: Musician[];
+  createMusician: (input: { name: string; role: string; username?: string }) => Musician;
+  deleteMusician: (id: string) => void;
+  /** Assign (or clear, with null) the performer who shows the enquiry in their console. */
+  assignMusician: (enquiryId: string, musicianId: string | null) => void;
+
   updateMusicRules: (rules: Partial<MusicRules>) => void;
   getEnquiryByRef: (ref: string) => CelebrationEnquiry | undefined;
 
@@ -946,6 +1019,64 @@ export function RequestsProvider({ children }: { children: ReactNode }) {
     [pushToast],
   );
 
+  const createMusician = useCallback(
+    (input: { name: string; role: string; username?: string }): Musician => {
+      const now = Date.now();
+      const base = (input.username ?? usernameFromName(input.name)).toLowerCase().trim();
+      const musician: Musician = {
+        id: `mnc_${now}`,
+        name: input.name.trim(),
+        role: input.role,
+        username: uniqueUsername(base, state.musicians),
+        active: true,
+      };
+      dispatch({ type: 'createMusician', musician });
+      pushToast({
+        tone: 'success',
+        title: `${musician.name} added`,
+        body: `Sign-in username: ${musician.username}`,
+      });
+      return musician;
+    },
+    [state.musicians, pushToast],
+  );
+
+  const deleteMusician = useCallback(
+    (id: string) => {
+      const target = state.musicians.find((musician) => musician.id === id);
+      if (!target) return;
+      dispatch({ type: 'deleteMusician', id });
+      pushToast({
+        tone: 'info',
+        title: `${target.name} removed`,
+        body: 'Any assigned events keep their performer name for the record.',
+      });
+    },
+    [state.musicians, pushToast],
+  );
+
+  const assignMusician = useCallback(
+    (enquiryId: string, musicianId: string | null) => {
+      const target = state.enquiries.find((enquiry) => enquiry.id === enquiryId);
+      if (!target) return;
+      const musician = state.musicians.find((entry) => entry.id === musicianId);
+      dispatch({
+        type: 'enquiryMusicianAssign',
+        id: enquiryId,
+        musicianId: musician ? musician.id : null,
+        musicianName: musician ? musician.name : null,
+        by: EVENTS_ACTOR,
+        now: Date.now(),
+      });
+      pushToast({
+        tone: musician ? 'success' : 'info',
+        title: musician ? `Assigned to ${musician.name}` : 'Performer cleared',
+        body: `${target.ref} · ${target.occasion} · ${target.venue}`,
+      });
+    },
+    [state.enquiries, state.musicians, pushToast],
+  );
+
   const updateMusicRules = useCallback(
     (rules: Partial<MusicRules>) => {
       dispatch({ type: 'setMusicRules', rules });
@@ -1005,6 +1136,10 @@ export function RequestsProvider({ children }: { children: ReactNode }) {
       addEnquiryNote,
       assignEnquiry,
       proposeEnquiryPackage,
+      musicians: state.musicians,
+      createMusician,
+      deleteMusician,
+      assignMusician,
       updateMusicRules,
       getEnquiryByRef: (ref: string) => state.enquiries.find((enquiry) => enquiry.ref === ref),
 
@@ -1027,6 +1162,9 @@ export function RequestsProvider({ children }: { children: ReactNode }) {
     addEnquiryNote,
     assignEnquiry,
     proposeEnquiryPackage,
+    createMusician,
+    deleteMusician,
+    assignMusician,
     updateMusicRules,
     tick,
   ]);

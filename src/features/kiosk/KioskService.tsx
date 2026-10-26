@@ -72,8 +72,8 @@ export function KioskService() {
       </p>
       <Notice className="mt-3" tone="gold" title="Presenter tip">
         <p>
-          Use the ribbon at the top to jump between this tablet, the guest QR experience, the two
-          staff dashboards and the management overview — all of them share this session's data.
+          Use the ribbon at the top to jump between this tablet, the guest QR experience, the staff
+          desk and the singer console — all of them share this session's data.
         </p>
       </Notice>
     </div>

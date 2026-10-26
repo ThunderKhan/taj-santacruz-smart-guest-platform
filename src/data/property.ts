@@ -3,21 +3,20 @@ import type { HotelLocation } from '@/types';
 /**
  * Property + location context.
  *
- * Taj Santacruz is used purely to demonstrate the presentation concept.
- * This prototype is not affiliated with, endorsed by, or connected to
- * Indian Hotels Company Limited (Taj Hotels).
+ * Deliberately brand-neutral: this is an independent concept prototype with no
+ * hotel-brand affiliation of any kind.
  */
 export const PROPERTY = {
-  name: 'Taj Santacruz',
+  name: 'Live Music & Celebrations',
   city: 'Mumbai, India',
-  descriptor: 'Smart Hotel Guest Service Platform',
+  descriptor: 'Smart Guest Platform',
   tagline: 'One platform. Every service. A better guest experience.',
   /**
    * Short, always-visible prototype disclosure. Repeated in the guest footer
-   * and the presenter ribbon so no screen implies an official Taj system.
+   * and the presenter ribbon so no screen implies an official hotel system.
    */
   disclosure:
-    'Independent concept prototype prepared for demonstration. Not affiliated with, endorsed by, or connected to Taj Hotels.',
+    'Independent concept prototype prepared for demonstration. Not affiliated with, endorsed by, or connected to any hotel brand.',
 } as const;
 
 /**

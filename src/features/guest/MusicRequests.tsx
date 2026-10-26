@@ -539,7 +539,7 @@ export function MusicRequests() {
           <Notice className="mt-4" tone="gold" title="Demo behaviour">
             <p>
               Voting, queue order and approvals all run on shared prototype state — switch to the
-              Live Music Desk to accept, defer, play and mark requests as played.
+              singer console to accept, defer, play and mark requests as played.
             </p>
           </Notice>
         </div>

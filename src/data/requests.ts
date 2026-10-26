@@ -1,6 +1,5 @@
 import type {
   AppNotification,
-  DepartmentId,
   Priority,
   RequestLineItem,
   RequestStage,
@@ -555,8 +554,3 @@ export function buildSeed(now: number): SeedState {
 }
 
 export const SEED_REFERENCE_COUNT = SPECS.length;
-
-/** Departments represented in the seed — used by admin empty-state logic. */
-export const SEED_DEPARTMENTS: DepartmentId[] = Array.from(
-  new Set(SPECS.map((spec) => resolveRoute(spec.service, spec.topic).department)),
-);

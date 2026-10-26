@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "Concept prototype — Smart Hotel Guest Service Platform (Taj Santacruz, Mumbai). Not an official Taj Hotels product.",
+  "description": "Concept prototype — Live Music Requests & Celebration Enquiries for hotel guests (table QR entry, performer console, events desk). Independent demonstration, not an official hotel product.",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
@@ -14,8 +14,7 @@
     "lucide-react": "^1.61.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
-    "react-router-dom": "^7.18.4",
-    "recharts": "^3.10.1"
+    "react-router-dom": "^7.18.4"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",

@@ -1,4 +1,5 @@
 import { cx } from '@/utils/format';
+import { PROPERTY } from '@/data/property';
 
 /**
  * Original prototype mark. Deliberately not derived from any hotel brand's
@@ -39,7 +40,7 @@ export function Wordmark({
             dark ? 'text-ivory-50' : 'text-ink-900',
           )}
         >
-          Taj Santacruz
+          {PROPERTY.name}
         </span>
         <span
           className={cx(

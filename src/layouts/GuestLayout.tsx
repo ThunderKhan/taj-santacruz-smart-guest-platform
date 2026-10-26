@@ -134,7 +134,7 @@ export function GuestLayout() {
                 </ul>
               </div>
               <div>
-                <p className="eyebrow-sm mb-3 text-warm-500">At {PROPERTY.name}</p>
+                <p className="eyebrow-sm mb-3 text-warm-500">{PROPERTY.name}</p>
                 <ul className="space-y-2 text-warm-700">
                   <li>Current context</li>
                   <li className="font-medium text-ink-900">{location.label}</li>

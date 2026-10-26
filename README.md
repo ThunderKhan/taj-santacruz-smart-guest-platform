@@ -1,4 +1,4 @@
-# Taj Santacruz — Live Music Requests & Celebration Enquiries (concept prototype)
+# Live Music Requests & Celebration Enquiries (concept prototype)
 
 **Unofficial concept demonstration · frontend only**
 
@@ -7,22 +7,25 @@ experiences:
 
 1. **Live Music Requests** — a guest scans a QR code at their table, searches the
    song catalogue, requests a track with an optional dedication, and votes for the
-   approved queue. A performer/DJ dashboard accepts, defers or rejects, manages the
-   running order, moderates dedications, and marks tracks `Playing → Played`.
+   approved queue. A **singer/performer console** accepts, defers or rejects,
+   manages the running order, moderates dedications, and marks tracks
+   `Playing → Played`.
 2. **Celebration Music & Entertainment Enquiries** — a guest submits a structured
    celebration enquiry (occasion, date, timing, guests, venue, entertainment
-   preference, genre, special requests). The Events & Banquets dashboard works it
+   preference, genre, special requests). The **staff events desk** works it
    through `New → Under Review → Need More Information → Proposal Sent →
-   Confirmed / Closed` with assignment, internal notes and sample packages.
+   Confirmed / Closed`, assigns a performer, and attaches internal notes and
+   sample packages.
 
-Both experiences share **one live state** with the management dashboard and the
-presenter tools — status changes appear on every connected screen without a refresh.
+Both experiences share **one live state** with the presenter tools — status
+changes appear on every connected screen without a refresh.
 
 > **Disclosure.** Independent concept prototype prepared for demonstration.
-> Not affiliated with, endorsed by, or connected to Taj Hotels / Indian Hotels
-> Company Limited. No real guest data, payments, bookings, availability, PMS,
-> SMS, authentication or AI services are used anywhere. Everything is fictional
-> sample data persisted to `localStorage`.
+> Not affiliated with, endorsed by, or connected to any hotel brand. No real
+> guest data, payments, bookings, availability, PMS, SMS, authentication or AI
+> services are used anywhere. Everything is fictional sample data persisted to
+> `localStorage`. The sign-in screens are a browser-only demo convenience, not
+> real authentication.
 
 ---
 
@@ -91,30 +94,49 @@ demo session always starts at a table — never a hotel room:
 | `/kiosk/:service` | Any other service reports "Service not available" (gate) |
 | `/kiosk/my-requests`, `/kiosk/my-requests/:ref` | Tablet-mode request list / timeline |
 
-### 3 — Staff dashboards
+### 3 — Sign-in (two back-of-house roles)
+
+Guests never sign in — they scan a table QR code. Staff and performers do:
 
 | Route | What it shows |
 | --- | --- |
-| `/staff` | Redirects to `/staff/entertainment` |
-| `/staff/entertainment` | **Live Music Desk (performer/DJ console)**: incoming, approved, deferred, on-stage, votable queue, played history, dedication moderation, demo rules |
-| `/staff/events` | **Events & Banquets**: enquiry pipeline, search/filter (occasion, date window, entertainment, status), detail drawer with workflow, assignment, sample packages, internal notes, status history |
-| `/staff/:department` | The five retained legacy dashboards (restaurant, housekeeping, maintenance, concierge, spa) still render by URL — hidden from the nav rail |
+| `/login` | Two panels: **Staff** (username `staff`) and **Musician** (e.g. `aarav`, `nisha`, `kabir`, `rohan`, plus any account staff create). Shared demo password `demo1234`, shown on screen. Unknown, disabled or wrong-password attempts are rejected with an inline message. |
 
-### 4 — Management
+The session is stored in `localStorage` (`smart-guest-platform:auth`) and
+persists across reloads. `/staff/*` and `/musician/*` are guarded: with no
+session they redirect to `/login`; a session of the wrong role is sent to its
+own console.
+
+### 4 — Staff console (signed in as staff)
 
 | Route | What it shows |
 | --- | --- |
-| `/admin` | Live KPIs, status mix, department charts, sample-history series, insights, scoreboard |
+| `/staff` | Redirects to `/staff/events` |
+| `/staff/events` | **Events & Banquets**: enquiry pipeline, search/filter (occasion, date window, entertainment, status), drawer with workflow, **colleague + performer assignment**, sample packages, internal notes, status history |
+| `/staff/musicians` | **Musicians**: list performer accounts, **add** a musician (name + stage role → derived sign-in username), **delete** one (two-step confirm). Shows who has upcoming events. |
+| `/staff/:department` | The five retained legacy dashboards (restaurant, housekeeping, maintenance, concierge, spa) still render by URL — hidden from the rail |
+
+Staff control **everything except the live music queue** — `/staff/entertainment`
+redirects to the events desk because live music belongs to the performers.
+
+### 5 — Singer console (signed in as a musician)
+
+| Route | What it shows |
+| --- | --- |
+| `/musician` | Redirects to `/musician/live` |
+| `/musician/live` | **Live music requests**: incoming (Accept / Defer / Reject), approved, on hold, on stage, votable queue, played history, **dedication moderation**, **demo rules** (pause, request limit, voting). Staff never see this queue. |
+| `/musician/events` | **My events**: the celebration enquiries the events desk assigned to this performer — read-only (facts, special requests, proposed package, status history; no workflow controls or internal notes). |
 
 ### Anything else
 
-`*` → a branded 404 page with links back into the demo.
+`*` → a branded 404 page with links back into the demo (including the staff &
+singer sign-in).
 
 ---
 
 ## The two workflows
 
-### Feature A — Live Music Requests (guest → performer)
+### Feature A — Live Music Requests (guest → singer console)
 
 1. Scan the table-tent QR (`/guest/music?loc=table-08`) — the screen opens
    already sitting at **your table**. Search first, or browse by category
@@ -123,22 +145,24 @@ demo session always starts at a table — never a hotel room:
    you get a `TSH-…` reference and the status **Submitted**.
    *Demo rules apply: max 2 open requests per guest, and the performer can pause
    incoming requests — the screen explains this when it blocks you.*
-3. Switch (presenter ribbon) to **Staff dashboards → Live Music Desk**.
+3. Sign in at `/login` as a **musician** (e.g. `aarav` / `demo1234`) and open the
+   **Live music** section of the singer console.
 4. Accept / Defer / Reject the incoming request, then **Add to queue** → the
    guest sees **Queued** and the track appears in the public vote queue.
 5. **Play now** (disabled while another track plays) → **Playing**;
    **Mark as played** → **Played**. The guest's screen and My requests update live.
-6. Dedications are visible to staff with a **Hold / Approve** toggle; a held
-   dedication shows as "held for review" on the public queue while the guest
+6. Dedications are visible to the performer with a **Hold / Approve** toggle; a
+   held dedication shows as "held for review" on the public queue while the guest
    keeps their own text.
 
-Status vocabulary (staff-managed only): `Submitted → Accepted → Queued → Playing →
-Played`, plus `Rejected` (guest-facing explanation) and `Deferred` (accepted, held).
-The guest follows it on a **five-step progress indicator** — compact dots in the
-music page's “Your requests” list and the full labelled stepper on each request's
-detail page (a declined request shows *Submitted → Declined*).
+Status vocabulary (performer-managed only): `Submitted → Accepted → Queued →
+Playing → Played`, plus `Rejected` (guest-facing explanation) and `Deferred`
+(accepted, held). The guest follows it on a **five-step progress indicator** —
+compact dots in the music page's “Your requests” list and the full labelled
+stepper on each request's detail page (a declined request shows *Submitted →
+Declined*).
 
-### Feature B — Celebration Enquiries (guest → events desk)
+### Feature B — Celebration Enquiries (guest → events desk → performer)
 
 1. On `/guest/occasions` fill in occasion, date + start time, duration, guest
    count, venue, entertainment preference (singer / band / DJ / instrumental /
@@ -146,13 +170,17 @@ detail page (a declined request shows *Submitted → Declined*).
 2. Validation runs inline; on success you receive a `CEL-…` reference, a
    confirmation with the disclaimer **"an enquiry is not a booking"**, and a live
    status card with its own timeline.
-3. Open **Staff dashboards → Events & Banquets**: the enquiry appears as **New**.
-   Search/filter by occasion, event date window, entertainment preference or
-   workflow status; open the drawer.
-4. In the drawer: assign a colleague, add internal notes (staff-only), attach a
-   **sample package** (indicative figures), and advance the workflow:
+3. Sign in as **staff** (`staff` / `demo1234`) → **Events & Banquets**: the
+   enquiry appears as **New**. Search/filter by occasion, event date window,
+   entertainment preference or workflow status; open the drawer.
+4. In the drawer: assign a colleague, **assign a performer** (from the Musicians
+   desk roster), add internal notes (staff-only), attach a **sample package**
+   (indicative figures), and advance the workflow:
    `New → Under Review → Need More Information → Proposal Sent → Confirmed / Closed`.
-5. The guest sees every status change in My requests / on their confirmation
+5. The assigned performer now sees the event, read-only, under
+   **Singer console → My events** — date, venue, requested music and status,
+   but never the workflow controls or the desk's internal notes.
+6. The guest sees every status change in My requests / on their confirmation
    screen — confirmed and closed are end states, and "Confirmed" is explicitly
    labelled a simulation (no signed proposal, deposit or calendar hold exists).
 
@@ -162,11 +190,14 @@ detail page (a declined request shows *Submitted → Declined*).
 
 | Area | State |
 | --- | --- |
-| Both workflows above, guest ↔ staff, live shared state, `localStorage` persistence (v3) | **Working** (frontend only) |
+| Both workflows above, guest ↔ performer ↔ staff, live shared state, `localStorage` persistence (v4) | **Working** (frontend only) |
+| Two demo log-ins (staff / musician), role-guarded consoles, musician account CRUD, performer assignment | **Working** (browser-only session, **not** authentication) |
+| Staff own the enquiry pipeline + musician accounts; performers own the live music queue | **Working** (ownership split enforced by routes and rail) |
 | Voting, request limits, pause, dedication hold/approve, workflow transitions, assignment, internal notes, sample packages | **Working** (demo rules on shared local state) |
-| Presenter ribbon switcher, kiosk mode, reset controls, management dashboard | **Working** |
-| Staff authentication / role-based permissions | **Simulated only** — no auth exists; staff access is explicitly labelled as demonstration |
+| Presenter ribbon switcher, kiosk mode, reset controls | **Working** |
+| Production authentication / role-based permissions / server-side authorisation | **Simulated only** — no auth exists; the demo password is checked in the browser and the UI says so |
 | Restaurant, housekeeping, maintenance, concierge, spa dashboards + their guest service forms | **Retained but hidden** — removed from guest navigation and the staff rail; routes still resolve by URL (`/guest/spa`, `/staff/housekeeping`, …) and their modules remain in the codebase for reuse |
+| Hotel management dashboard (`/admin`) | **Removed** — route, rail entry and module deleted; the analytics dependency (`recharts`) was dropped with it |
 | Availability checks, pricing, quotations, booking confirmation | **Never claimed** — packages are sample data with indicative INR figures; no availability is ever displayed |
 | Production backend · payments · PMS/channel integrations · SMS/email/push · real data · API keys · AI services | **Out of scope by design** — would be the production integration phase |
 | Real audio streaming / song licensing | **Not present** — metadata only, stated in the UI |
@@ -177,31 +208,36 @@ detail page (a declined request shows *Submitted → Declined*).
 
 ```
 src/
-├── App.tsx                 Route map for all four experiences
-├── main.tsx                Router + provider + toaster
-├── types/                  Shared domain types (ServiceRequest, CelebrationEnquiry, …)
+├── App.tsx                 Route map for all experiences + RequireRole guard
+├── main.tsx                Router + providers (Requests, Auth) + toaster
+├── types/                  Shared domain types (ServiceRequest, CelebrationEnquiry,
+│                           Musician, …)
 ├── data/                   Mock data: property, departments, services, music catalogue,
-│                           celebrations (packages + enquiry seeds), requests (seeds)
+│                           musicians (seed accounts + demo credentials), celebrations
+│                           (packages + enquiry seeds), requests (seeds)
 ├── services/
 │   ├── routing.ts          Configurable service→department routing rules
 │   ├── requestEngine.ts    buildRequest / canTransition / applyTransition / labels
 │   └── enquiryEngine.ts    enquiry workflow: transitions, actions, labels, references
-├── store/RequestsProvider  Reducer + context: requests, enquiries, demo music rules,
-│                           notifications, toasts, localStorage persistence (v3)
+├── store/
+│   ├── RequestsProvider    Reducer + context: requests, enquiries, musicians, demo music
+│   │                       rules, notifications, toasts, localStorage persistence (v4)
+│   └── AuthProvider        Demo sign-in for the staff / musician roles (localStorage)
 ├── hooks/                  useDepartmentQueue, useActiveDepartment, useHomePath, …
 ├── components/             Brand, imagery, QR, bell, ribbon, location switcher,
 │                           request progress steps (RequestSteps)
 │   └── ui/                 Button, Badge (Status/Enquiry), Panel, Field, Overlay,
 │                           Timeline (Request/Enquiry), Feedback, Toaster
-├── layouts/                GuestLayout, KioskLayout, StaffLayout, AdminLayout
+├── layouts/                GuestLayout, KioskLayout, StaffLayout, MusicianLayout
 ├── features/
 │   ├── guest/              MusicRequests, CelebrationEnquiry, MyRequests, home, catalogue
 │   ├── kiosk/              KioskHome, KioskService (reuses guest modules, focus-gated)
-│   ├── entertainment/      StageDashboard (performer/DJ console)
-│   ├── events/             EventsDashboard + EnquiryDrawer
-│   ├── departments/        DepartmentRoute + department-specific panels (retained)
-│   └── admin/              AdminDashboard (Recharts)
-└── pages/NotFound.tsx
+│   ├── entertainment/      StageDashboard (singer console — live music queue)
+│   ├── events/             EventsDashboard + EnquiryDrawer (staff + read-only modes)
+│   ├── staff/              MusiciansDashboard (account CRUD)
+│   ├── musician/           MusicianEvents (assigned celebrations, read-only)
+│   └── departments/        DepartmentRoute + department-specific panels (retained)
+└── pages/                  LoginPage, NotFound
 ```
 
 **State model.** Guest submissions go through `buildRequest()`; enquiries through
@@ -209,14 +245,17 @@ src/
 department wording (`queued`, `playing`, `played`, `deferred`, `preparing`, …).
 Enquiries have their own engine (`enquiryEngine.ts`) because their lifecycle and
 actor vocabulary differ from hotel requests. One localStorage key
-(`smart-guest-platform:v1`, `STATE_VERSION = 3`) holds both slices plus the demo
-music rules; the bump to v3 re-seeds older stored demos with the table-first
-location data, and seed timestamps re-anchor after 14 idle hours. Reset controls
-(ribbon, kiosk restart, footer) restore the seeded state.
+(`smart-guest-platform:v1`, `STATE_VERSION = 4`) holds requests, enquiries,
+**musician accounts** and the demo music rules; the bump to v4 re-seeds older
+stored demos with the musician roster, and seed timestamps re-anchor after 14
+idle hours. Reset controls (ribbon, kiosk restart, footer) restore the seeded
+state. The demo sign-in session lives in a separate key
+(`smart-guest-platform:auth`).
 
 **Presenter ribbon.** A discreet, collapsible bar carries the prototype
-disclosure, the Guest / Staff / Management switcher, tablet mode and reset.
-Layouts compensate via `useRibbonOffset()`.
+disclosure, the Guest / Staff / Singer switcher, tablet mode and reset. The
+Staff and Singer buttons go straight to their console when you are signed in for
+that role, otherwise to `/login`. Layouts compensate via `useRibbonOffset()`.
 
 ---
 
@@ -226,8 +265,8 @@ Layouts compensate via `useRibbonOffset()`.
   champagne gold (`gold-*`), muted sage (`sage-*`), warm grey (`warm-*`).
   No neon, no decorative gradients, no glassmorphism.
 - **Type:** Cormorant Garamond for display, Inter for UI (with system fallbacks).
-- **Surfaces:** Guest = ivory + serif + gold, mobile-first; Staff = midnight navy
-  console, desktop-first; Management = light with a dark navy header.
+- **Surfaces:** Guest = ivory + serif + gold, mobile-first; Staff and Singer
+  consoles = midnight navy, desktop-first.
 - **States:** every screen provides loading/empty/success/validation/error
   treatments (`EmptyState`, `Notice`, `SuccessPanel`, inline field errors).
 - **Accessibility:** focus-visible outlines, labelled controls, dialog focus
@@ -239,35 +278,37 @@ Layouts compensate via `useRibbonOffset()`.
 
 - `npx tsc -b` — passes with strict options (`noUnusedLocals`,
   `noUnusedParameters`, `verbatimModuleSyntax`).
-- `npm run build` — passes (vendor/charts/icons split into separate chunks).
-- Browser end-to-end, both workflows verified on the dev server:
-  - **Table-first entry:** `…/guest?loc=table-12` switches the session to Table 12
-    and clears the parameter; the location control lists only the six tables /
-    venues (no rooms); no `Room …` string appears on any guest route, on the
-    Live Music Desk or on Events & Banquets.
-  - **Feature A:** search → category filter → request with dedication →
-    `Submitted` on the guest screen → Accept → Add to queue (`Queued`) →
-    Play now (disabled while another track plays) → Mark as played (`Played`) →
-    guest sees `Played` in My requests, all without refresh.
-  - **Progress stepper:** the request detail walks `Submitted → Accepted →
-    Queued → Playing → Played` as staff act, the music page's list shows the
-    compact form (including a *Declined* marker for a rejected request).
-  - **Feature B:** form → empty-submit validation (all 7 field errors) → filled
-    submission → `CEL-3300` reference + confirmation + disclaimers → events
-    dashboard → drawer: assignment, internal note, sample package →
-    `New → Under Review → Proposal Sent` → guest sees the update live.
-  - Guests cannot change statuses: the request detail page has no
-    cancel/accept/complete controls and states that statuses belong to staff.
-  - Kiosk gate: `/kiosk/housekeeping` reports "Service not available";
-    `/kiosk/occasions` renders the enquiry form.
-  - Legacy dashboards still render by URL (`/staff/housekeeping`) while the rail
-    shows only the two focus desks; `/staff` redirects to the Live Music Desk.
-  - Demo rules: pausing requests on the stage desk blocks guest submissions with
-    an on-page notice; voting increments/decrements correctly.
-  - **No horizontal overflow at 390 px** (mobile) on `/guest`, `/guest/music`,
-    `/guest/occasions`, `/guest/my-requests`, `/guest/my-requests/:ref`,
-    `/staff/entertainment`, `/staff/events`, `/kiosk/housekeeping` — the guest
-    header's location chip now shrinks instead of pushing the page sideways.
+- `npm run build` — passes (vendor/icons split into separate chunks; the charts
+  chunk is gone with the removed management dashboard).
+- Browser end-to-end on the dev server:
+  - **Sign-in & guards:** `/staff` and `/musician` with no session redirect to
+    `/login`; a wrong password is rejected with an inline error; `staff` /
+    `demo1234` lands on `/staff/events`; `aarav` / `demo1234` lands on the singer
+    console. **Sign out** returns to `/login` and clears the session.
+  - **Singer console:** live queue populated (2 awaiting, 4 queued, on-stage,
+    played); **Accept** moves *Tere Bina* into the approved pool; demo rules,
+    dedication moderation and the queue controls are present; the rail shows
+    **Live music** and **My events** only.
+  - **Staff console:** rail shows **Event enquiries + Musicians** (no live music
+    section); `/staff/entertainment` redirects to the events desk; the header
+    shows the signed-in staff identity with a sign-out control.
+  - **Musicians desk:** all four seeded accounts listed with their sign-in
+    usernames and upcoming-event counts; creating *Tara Menon* derives the
+    username `taramenon` and clears the form; deleting is two-step (Delete →
+    Yes, delete) and removes only that account.
+  - **Performer assignment:** the events drawer assigns a performer; the event
+    then appears under **Singer console → My events** for that musician and not
+    for others (CEL-3213 shows for Aarav only).
+  - **Read-only for performers:** the musician's event drawer shows the facts,
+    special requests, proposed package and status history, but **no** workflow
+    buttons, **no** internal notes and **no** proposal controls.
+  - **Feature A** and **Feature B** guest journeys, the progress stepper, the
+    table-first QR entry (`?loc=…`), the kiosk gate, the demo rules and the
+    legacy dashboards by URL were verified in the previous pass and are
+    unchanged by this refactor.
+  - **No `Taj` / `Santacruz` string anywhere** — confirmed by grep across
+    `src/`, `index.html`, `package.json` and the docs, and by `innerText` checks
+    on the login, guest, staff and musician screens.
 - `public/robots.txt` noindexes the prototype.
 
 See `PROTOTYPE_REPORT.md` for the full report: changed files, retained/hidden

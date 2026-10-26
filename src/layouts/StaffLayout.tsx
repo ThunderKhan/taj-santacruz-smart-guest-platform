@@ -1,43 +1,57 @@
-import { Link, NavLink, Outlet } from 'react-router-dom';
-import { FOCUS_DEPARTMENTS, departmentName, findDepartment } from '@/data/departments';
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { LogOut, Users } from 'lucide-react';
+import { departmentName } from '@/data/departments';
 import { useRequests } from '@/store/RequestsProvider';
+import { useAuth } from '@/store/AuthProvider';
 import { useRibbonOffset } from '@/hooks/useRibbonOffset';
-import { useActiveDepartment } from '@/hooks/useActiveDepartment';
 import { Wordmark } from '@/components/Brand';
 import { NotificationBell } from '@/components/NotificationBell';
 import { CountChip } from '@/components/ui/Badge';
-import { DEPARTMENT_ICONS, DEPARTMENT_SHORT } from '@/features/departments/departmentMeta';
+import { Button } from '@/components/ui/Button';
+import { DEPARTMENT_ICONS } from '@/features/departments/departmentMeta';
 import { isTerminal } from '@/services/requestEngine';
 import { isEnquiryTerminal } from '@/services/enquiryEngine';
 import { PROPERTY } from '@/data/property';
 import { cx } from '@/utils/format';
-import type { DepartmentId } from '@/types';
 
 /**
- * Dark operations console shared by the staff dashboards.
- * Midnight navy chrome with a fixed desk rail — purpose-built for staff
- * rather than a light consumer layout shrunk down.
+ * Dark operations console for the signed-in staff role.
  *
- * The rail surfaces the two focus desks of this prototype (Live Music and
- * Events & Banquets). The remaining department routes still resolve by URL;
- * they are simply not advertised here.
+ * Two desks only: the celebration **event enquiries** pipeline and the
+ * **musicians** who can be assigned to them. Live music requests are owned by
+ * the performers in their own console — the events desk never sees them, so
+ * staff control everything *except* the live music queue.
  */
 export function StaffLayout() {
   const offset = useRibbonOffset();
-  const active = useActiveDepartment();
-  const { requests, enquiries } = useRequests();
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const active: 'events' | 'musicians' = pathname.startsWith('/staff/musicians')
+    ? 'musicians'
+    : 'events';
+  const { requests, enquiries, musicians } = useRequests();
+  const { session, signOut } = useAuth();
 
   const openEnquiries = enquiries.filter((enquiry) => !isEnquiryTerminal(enquiry.status));
 
-  const openCount = (department: DepartmentId) => {
-    if (department === 'events') return openEnquiries.length;
-    return requests.filter(
-      (request) =>
-        request.department === department &&
-        (request.status === 'submitted' || request.status === 'accepted'),
-    ).length;
-  };
+  const desks = [
+    {
+      id: 'events',
+      to: '/staff/events',
+      label: 'Event enquiries',
+      Icon: DEPARTMENT_ICONS.events,
+      count: openEnquiries.length,
+    },
+    {
+      id: 'musicians',
+      to: '/staff/musicians',
+      label: 'Musicians',
+      Icon: Users,
+      count: musicians.length,
+    },
+  ] as const;
 
+  const title = active === 'events' ? departmentName('events') : 'Musicians';
   const totalOpen =
     requests.filter((request) => !isTerminal(request.status)).length + openEnquiries.length;
 
@@ -58,9 +72,10 @@ export function StaffLayout() {
           <span aria-hidden="true" className="hidden h-6 w-px bg-white/12 lg:block" />
 
           <div className="hidden min-w-0 lg:block">
-            <p className="eyebrow-sm text-warm-500">Department operations</p>
+            <p className="eyebrow-sm text-warm-500">Staff console</p>
             <p className="truncate text-[14px] font-medium text-ivory-50">
-              {departmentName(active)}
+              {title}
+              {session ? ` · ${session.displayName}` : ''}
             </p>
           </div>
 
@@ -70,6 +85,17 @@ export function StaffLayout() {
               <span className="tabular-nums">{totalOpen} open across all teams</span>
             </span>
             <NotificationBell audience="staff" dark />
+            <Button
+              variant="outlineDark"
+              size="sm"
+              onClick={() => {
+                signOut();
+                navigate('/login', { replace: true });
+              }}
+            >
+              <LogOut aria-hidden="true" className="h-4 w-4" />
+              <span className="hidden sm:inline">Sign out</span>
+            </Button>
           </div>
         </div>
       </header>
@@ -81,17 +107,14 @@ export function StaffLayout() {
           style={{ top: offset + 56 }}
         >
           <nav aria-label="Desks" className="py-5">
-            <p className="eyebrow-sm px-5 pb-3 text-warm-500">Focus desks</p>
+            <p className="eyebrow-sm px-5 pb-3 text-warm-500">Desks</p>
             <ul>
-              {FOCUS_DEPARTMENTS.map((departmentId) => {
-                const department = findDepartment(departmentId);
-                const Icon = DEPARTMENT_ICONS[department.id];
-                const current = department.id === active;
-                const count = openCount(department.id);
+              {desks.map(({ id, to, label, Icon, count }) => {
+                const current = id === active;
                 return (
-                  <li key={department.id}>
+                  <li key={id}>
                     <NavLink
-                      to={`/staff/${department.id}`}
+                      to={to}
                       className={cx(
                         'relative flex items-center gap-3 px-5 py-3 text-[14px] transition-colors',
                         'focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-gold-500',
@@ -110,9 +133,7 @@ export function StaffLayout() {
                         className={cx('h-4 w-4 shrink-0', current ? 'text-gold-400' : 'text-warm-500')}
                         strokeWidth={1.6}
                       />
-                      <span className="min-w-0 flex-1 truncate font-medium">
-                        {DEPARTMENT_SHORT[department.id]}
-                      </span>
+                      <span className="min-w-0 flex-1 truncate font-medium">{label}</span>
                       {count > 0 ? <CountChip value={count} dark /> : null}
                     </NavLink>
                   </li>
@@ -122,8 +143,9 @@ export function StaffLayout() {
 
             <div className="mx-5 mt-5 border-t border-white/10 pt-4">
               <p className="text-[11.5px] leading-relaxed text-warm-500">
-                Simulated staff access for demonstration only. Production deployments require
-                authenticated accounts, role-based permissions and server-side authorisation.
+                Staff own celebration enquiries, packages and musician accounts. Live music requests
+                are worked by the performers in their own console. Demo sign-in only — production
+                deployments require authenticated accounts and server-side authorisation.
               </p>
             </div>
           </nav>
@@ -136,15 +158,12 @@ export function StaffLayout() {
             aria-label="Desks"
             className="flex gap-1 overflow-x-auto border-b border-white/10 px-3 py-2 no-scrollbar lg:hidden"
           >
-            {FOCUS_DEPARTMENTS.map((departmentId) => {
-              const department = findDepartment(departmentId);
-              const Icon = DEPARTMENT_ICONS[department.id];
-              const current = department.id === active;
-              const count = openCount(department.id);
+            {desks.map(({ id, to, label, Icon, count }) => {
+              const current = id === active;
               return (
                 <NavLink
-                  key={department.id}
-                  to={`/staff/${department.id}`}
+                  key={id}
+                  to={to}
                   className={cx(
                     'inline-flex shrink-0 items-center gap-1.5 rounded-[3px] px-2.5 py-1.5 text-[12.5px] font-medium transition-colors',
                     current
@@ -153,7 +172,7 @@ export function StaffLayout() {
                   )}
                 >
                   <Icon className="h-3.5 w-3.5" strokeWidth={1.7} />
-                  {DEPARTMENT_SHORT[department.id]}
+                  {label}
                   {count > 0 ? <CountChip value={count} dark={!current} /> : null}
                 </NavLink>
               );

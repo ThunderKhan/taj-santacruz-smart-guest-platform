@@ -18,8 +18,8 @@ export function NotFound() {
       </h1>
       <div className="gold-hairline mt-5 w-24" />
       <p className="mt-5 text-[14.5px] leading-relaxed text-warm-600">
-        The prototype exposes the guest experience, the tablet kiosk, six department dashboards and
-        the management overview. {PROPERTY.disclosure}
+        The prototype exposes the guest QR experience, the tablet kiosk, the staff desk and the
+        singer console. {PROPERTY.disclosure}
       </p>
 
       <div className="mt-7 flex flex-wrap justify-center gap-3">
@@ -38,10 +38,10 @@ export function NotFound() {
           Tablet mode
         </Link>
         <Link
-          to="/admin"
+          to="/login"
           className="inline-flex h-11 items-center gap-2 rounded-[3px] border border-warm-300 bg-white px-5 text-[14px] font-medium text-ink-900 transition-colors hover:border-warm-400"
         >
-          Management overview
+          Staff &amp; singer sign-in
         </Link>
         <button
           type="button"

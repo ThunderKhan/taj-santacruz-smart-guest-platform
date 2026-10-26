@@ -294,6 +294,24 @@ export interface EnquiryNote {
   body: string;
 }
 
+/**
+ * A performer who can sign in to the singer console.
+ *
+ * Seeded accounts are demo-only; staff create and delete accounts from the
+ * Musicians desk. No passwords or personal details are stored — sign-in checks
+ * a demo password in the browser and grants nothing beyond this prototype.
+ */
+export interface Musician {
+  id: string;
+  name: string;
+  /** Stage role shown on panels, e.g. "Lead singer". */
+  role: string;
+  /** Lower-case demo sign-in username, unique across musicians. */
+  username: string;
+  /** Disabled musicians can no longer sign in. */
+  active: boolean;
+}
+
 export interface CelebrationEnquiry {
   /** Internal stable id. */
   id: string;
@@ -322,6 +340,10 @@ export interface CelebrationEnquiry {
   submittedAt: number;
   updatedAt: number;
   assignedTo: string | null;
+  /** Performer assigned by the events desk — shown read-only in their console. */
+  assignedMusicianId: string | null;
+  /** Display-name snapshot so the assignment survives account deletion. */
+  assignedMusician: string | null;
   /** Display label of the sample package proposed to the guest, if any. */
   proposedPackage: string | null;
   internalNotes: EnquiryNote[];

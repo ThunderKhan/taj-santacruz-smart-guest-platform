@@ -141,6 +141,8 @@ export function buildEnquiry(
     submittedAt: context.now,
     updatedAt: context.now,
     assignedTo: null,
+    assignedMusicianId: null,
+    assignedMusician: null,
     proposedPackage: null,
     internalNotes: [],
     history: [

@@ -1,12 +1,13 @@
 import type { CelebrationEnquiry, EnquiryEvent, EnquiryNote, EnquiryStatus } from '@/types';
 import { DEMO_GUEST_REF } from '@/data/requests';
+import { MUSICIAN_SEED } from '@/data/musicians';
 
 /**
  * Celebration music & entertainment enquiry sample data.
  *
  * Every record, package and price is fictional and exists only to demonstrate
- * the enquiry workflow. Nothing here reflects real Taj availability, pricing or
- * confirmed bookings.
+ * the enquiry workflow. Nothing here reflects real hotel availability, pricing
+ * or confirmed bookings.
  */
 
 const MINUTE = 60_000;
@@ -167,6 +168,8 @@ interface EnquirySeedSpec {
   minutesAgo: number;
   status: EnquiryStatus;
   assignedTo?: string;
+  /** Seeded performer assignment (musician id from `@/data/musicians`). */
+  assignedMusician?: string;
   proposedPackage?: string;
   /** `[status, absoluteMinutesAgo, actor, note]` from oldest to newest. */
   history: Array<[EnquiryStatus, number, string, string?]>;
@@ -200,6 +203,7 @@ const SPECS: EnquirySeedSpec[] = [
     minutesAgo: 1800,
     status: 'proposal_sent',
     assignedTo: 'Sanya Kapoor',
+    assignedMusician: 'mnc_nisha',
     proposedPackage: packageLabel('pkg-vocalist'),
     history: [
       ['new', 1800, 'Guest · Table 08', 'Enquiry received — not a confirmed booking'],
@@ -251,6 +255,7 @@ const SPECS: EnquirySeedSpec[] = [
     minutesAgo: 240,
     status: 'under_review',
     assignedTo: 'Devika Rao',
+    assignedMusician: 'mnc_rohan',
     history: [
       ['new', 240, 'Guest · Lobby Lounge', 'Enquiry received — not a confirmed booking'],
       ['under_review', 200, 'Events desk · Devika Rao', 'Reviewing banquet capacity and AV requirements'],
@@ -276,6 +281,7 @@ const SPECS: EnquirySeedSpec[] = [
     minutesAgo: 480,
     status: 'needs_info',
     assignedTo: 'Sanya Kapoor',
+    assignedMusician: 'mnc_aarav',
     history: [
       ['new', 480, 'Guest · Table 01', 'Enquiry received — not a confirmed booking'],
       ['under_review', 450, 'Events desk · Sanya Kapoor'],
@@ -299,6 +305,7 @@ const SPECS: EnquirySeedSpec[] = [
     minutesAgo: 2600,
     status: 'confirmed',
     assignedTo: 'Imran Qureshi',
+    assignedMusician: 'mnc_kabir',
     proposedPackage: packageLabel('pkg-dj-night'),
     history: [
       ['new', 2600, 'Guest · Poolside Table 03', 'Enquiry received — not a confirmed booking'],
@@ -389,6 +396,8 @@ function buildSeedEnquiry(spec: EnquirySeedSpec, now: number): CelebrationEnquir
     submittedAt: history.length ? history[0].at : now - spec.minutesAgo * MINUTE,
     updatedAt: history.length ? history[history.length - 1].at : now - spec.minutesAgo * MINUTE,
     assignedTo: spec.assignedTo ?? null,
+    assignedMusicianId: spec.assignedMusician ?? null,
+    assignedMusician: MUSICIAN_SEED.find((musician) => musician.id === spec.assignedMusician)?.name ?? null,
     proposedPackage: spec.proposedPackage ?? null,
     internalNotes,
     history,
