@@ -1,8 +1,6 @@
 import { useState } from "react";
 import { SongRequestConfirmation } from "./SongRequestConfirmation";
-import { Link } from "react-router-dom";
 import {
-  ArrowUpRight,
   AudioLines,
   Check,
   Disc3,
@@ -13,9 +11,8 @@ import {
   ThumbsUp,
 } from "lucide-react";
 import { useRequests } from "@/store/RequestsProvider";
-import { useHomePath } from "@/hooks/useHomePath";
 import { LocationControl } from "@/components/LocationSwitcher";
-import { StatusBadge } from "@/components/ui/Badge";
+import { SongRequestRow, SongRequestStatus } from "./SongRequestRow";
 import {
   PERFORMER,
   NOW_PLAYING,
@@ -28,7 +25,6 @@ import type { Song, SongCategory } from "@/types";
 export function MusicRequests() {
   const { requests, session, location, createRequest, toggleVote, musicRules } =
     useRequests();
-  const home = useHomePath();
   const [view, setView] = useState<"search" | "mine" | "queue">("search");
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<SongCategory | "all">("all");
@@ -373,35 +369,7 @@ export function MusicRequests() {
                   <span className="music-pill">{mine.length}</span>
                 </div>
                 {mine.length ? (
-                  mine.slice(0, 6).map((r) => (
-                    <Link
-                      key={r.id}
-                      to={`${home}/requests/${r.ref}`}
-                      className="music-my-row"
-                    >
-                      <div>
-                        <strong>{r.meta.Track ?? r.title}</strong>
-                        <small>
-                          {r.meta.Artist}
-                          {r.meta["Preferred play time"] &&
-                          r.meta["Preferred play time"] !== "Any time"
-                            ? ` · Preferred: ${r.meta["Preferred play time"]}`
-                            : ""}{" "}
-                          ·{" "}
-                          {
-                            music.filter(
-                              (other) =>
-                                other.meta.Track === r.meta.Track &&
-                                !isTerminal(other.status),
-                            ).length
-                          }{" "}
-                          requests
-                        </small>
-                      </div>
-                      <StatusBadge status={r.status} stage={r.stage} />
-                      <ArrowUpRight size={18} />
-                    </Link>
-                  ))
+                  mine.map((r) => <SongRequestRow key={r.id} request={r} />)
                 ) : (
                   <p className="music-muted">
                     Your song’s journey appears here after you send a request.
@@ -432,6 +400,7 @@ export function MusicRequests() {
                       </span>
                       <div className="music-song-info">
                         <strong>{r.meta.Track ?? r.title}</strong>
+                        <SongRequestStatus request={r} />
                         <small>
                           {r.meta.Artist}
                           {r.meta["Preferred play time"] &&

@@ -1359,3 +1359,56 @@ a[class*="bg-gold-500"] {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+.song-request-summary {
+  cursor: default;
+  margin: 0;
+  border-radius: 0;
+  padding: 18px;
+}
+.song-inline-status {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border: 1px solid var(--apple-hairline);
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--apple-caption);
+  background: var(--apple-parchment);
+  white-space: nowrap;
+}
+.song-inline-status > span {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.song-status-accepted,
+.song-status-in_progress {
+  color: var(--apple-accent);
+  background: #edf5ff;
+  border-color: #cce3ff;
+}
+.song-status-rejected {
+  color: #9d382c;
+  background: #fff4f2;
+  border-color: #f0d5cf;
+}
+.song-status-completed {
+  color: #326544;
+  background: #f0f6f1;
+  border-color: #d8e6db;
+}
+.music-vote-list .music-song-info .song-inline-status {
+  margin-top: 7px;
+  padding: 3px 8px;
+  font-size: 10px;
+}
+@media (max-width: 480px) {
+  .song-request-summary {
+    flex-wrap: wrap;
+  }
+}
