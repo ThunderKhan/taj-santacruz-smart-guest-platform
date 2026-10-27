@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { MusicianEvents } from "@/features/musician/MusicianEvents";
 import { useAuth } from "@/store/AuthProvider";
 import { isEnquiryTerminal } from "@/services/enquiryEngine";
 import {
@@ -20,7 +20,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { relativeTime } from "@/utils/format";
 import type { ServiceRequest } from "@/types";
 
-type Tab = "new" | "queue" | "history" | "settings" | "qr";
+type Tab = "new" | "queue" | "history" | "settings" | "qr" | "events";
 export function StageDashboard() {
   const {
     requests,
@@ -60,19 +60,24 @@ export function StageDashboard() {
   const history = music
     .filter((r) => ["completed", "rejected", "cancelled"].includes(r.status))
     .sort((a, b) => b.updatedAt - a.updatedAt);
-  const url = `${window.location.origin}/guest/music?loc=lounge-table-04`;
+  const url = `${window.location.origin}/?loc=table-08`;
   const actor = "Performer · live console";
   // Keep keyboard triage in the same action column after a request leaves the inbox.
   function restoreTriageFocus(id: string, action: "accept" | "decline") {
     const buttons = Array.from(
       document.querySelectorAll<HTMLButtonElement>(`[data-triage="${action}"]`),
     );
-    const current = buttons.findIndex((button) => button.dataset.request === id);
+    const current = buttons.findIndex(
+      (button) => button.dataset.request === id,
+    );
     const next = buttons[current + 1] ?? buttons[current - 1];
     const hadFocus = buttons[current] === document.activeElement;
     if (hadFocus) {
       requestAnimationFrame(() => {
-        (next?.isConnected ? next : document.getElementById("tab-new"))?.focus();
+        (next?.isConnected
+          ? next
+          : document.getElementById("tab-new")
+        )?.focus();
       });
     }
   }
@@ -250,16 +255,22 @@ export function StageDashboard() {
     );
   }
   return (
-    <main className="music-console music-singer-centered">
+    <main
+      id="workspace-content"
+      tabIndex={-1}
+      className="music-console music-singer-centered"
+    >
       <header className="music-page-heading">
         <div>
           <p className="music-kicker">PERFORMER CONSOLE</p>
           <h1>
-            {tab === "settings"
-              ? "Tonight’s settings"
-              : tab === "qr"
-                ? "Share the evening"
-                : "Live activity"}
+            {tab === "events"
+              ? "My events"
+              : tab === "settings"
+                ? "Tonight’s settings"
+                : tab === "qr"
+                  ? "Share the evening"
+                  : "Live activity"}
           </h1>
           <p>
             {PERFORMER.venue} · {PERFORMER.name}
@@ -279,10 +290,15 @@ export function StageDashboard() {
             set the mood.
           </h2>
           <p>You choose the songs. We’ll keep the requests in order.</p>
-          <Link className="music-summary-events" to="/musician/events">
+          <button
+            type="button"
+            className="music-summary-events"
+            onClick={() => setTab(tab === "events" ? "new" : "events")}
+            aria-pressed={tab === "events"}
+          >
             <CalendarDays size={17} aria-hidden="true" />
             My events<span>{myEventsCount}</span>
-          </Link>
+          </button>
         </div>
         <div className="music-summary-stats">
           <div>
@@ -346,7 +362,17 @@ export function StageDashboard() {
           </button>
         ) : null}
       </section>
-      {tab === "settings" ? (
+      {tab === "events" ? (
+        <section className="singer-events-panel bg-ink-900 text-cream-200">
+          <button
+            className="music-secondary singer-events-back"
+            onClick={() => setTab("new")}
+          >
+            Back to requests
+          </button>
+          <MusicianEvents />
+        </section>
+      ) : tab === "settings" ? (
         <section className="music-settings">
           <p className="music-kicker">YOU’RE IN CONTROL</p>
           <h2>What guests can do</h2>

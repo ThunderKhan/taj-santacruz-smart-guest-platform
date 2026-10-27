@@ -103,7 +103,11 @@ export function MusicRequests() {
     setView("mine");
   }
   return (
-    <main className="music-page music-centered">
+    <main
+      id="workspace-content"
+      tabIndex={-1}
+      className="music-page music-centered"
+    >
       {confirmation ? (
         <SongRequestConfirmation
           song={confirmation}
@@ -151,12 +155,20 @@ export function MusicRequests() {
             aria-label="Guest music sections"
             onKeyDown={(event) => {
               const views = ["search", "mine", "queue"] as const;
-              if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key))
+              if (
+                !["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)
+              )
                 return;
               event.preventDefault();
               const next =
-                event.key === "Home" ? 0 : event.key === "End" ? 2
-                  : (views.indexOf(view) + (event.key === "ArrowRight" ? 1 : -1) + 3) % 3;
+                event.key === "Home"
+                  ? 0
+                  : event.key === "End"
+                    ? 2
+                    : (views.indexOf(view) +
+                        (event.key === "ArrowRight" ? 1 : -1) +
+                        3) %
+                      3;
               setView(views[next]);
               document.getElementById(`guest-tab-${views[next]}`)?.focus();
             }}
@@ -204,322 +216,335 @@ export function MusicRequests() {
             aria-labelledby={`guest-tab-${view}`}
             tabIndex={0}
           >
-          {view === "search" ? (
-            <>
-              <div className="music-section-heading">
-                <div>
-                  <p className="music-kicker">MAKE IT YOUR NIGHT</p>
-                  <h2>Request a song</h2>
-                </div>
-                <span className="music-pill">Unlimited requests</span>
-              </div>
-              <p className="music-muted">
-                Choose from tonight’s repertoire. The band decides what plays.
-              </p>
-              <label className="music-search">
-                <Search size={20} />
-                <input
-                  aria-label="Search songs, artists or genres"
-                  id="music-song-search"
-                  placeholder="Find a song or artist…"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                />
-              </label>
-              <div className="music-filters" aria-label="Song categories">
-                <button
-                  aria-pressed={category === "all"}
-                  onClick={() => setCategory("all")}
-                >
-                  All songs
-                </button>
-                {SONG_CATEGORIES.map((c) => (
-                  <button
-                    key={c.id}
-                    aria-pressed={category === c.id}
-                    onClick={() => setCategory(c.id)}
-                  >
-                    {c.label}
-                  </button>
-                ))}
-              </div>
-              {selected ? (
-                <section
-                  className="music-request-form"
-                  aria-label="Confirm your song request"
-                >
-                  <p className="music-kicker">YOUR PICK</p>
-                  <h3 ref={selectedHeading} tabIndex={-1}>
-                    {selected.title}
-                  </h3>
-                  <p className="music-muted">
-                    {selected.artist} · {location.label}
-                  </p>
-                  <fieldset
-                    className="music-time-picker"
-                    aria-describedby="play-time-help"
-                  >
-                    <legend>
-                      <Clock3 size={17} aria-hidden="true" />
-                      When would you like to hear it? <span>(optional)</span>
-                    </legend>
-                    <p id="play-time-help">
-                      Choose a preferred time for this evening. The band will do
-                      its best to fit it into the set.
-                    </p>
-                    <div className="music-time-options">
-                      {[
-                        { value: "any", label: "Any time" },
-                        { value: "21:30", label: "9:30 PM" },
-                        { value: "22:00", label: "10:00 PM" },
-                        { value: "23:00", label: "11:00 PM" },
-                      ].map((option) => (
-                        <button
-                          type="button"
-                          key={option.value}
-                          aria-pressed={playTime === option.value}
-                          onClick={() => {
-                            setPlayTime(option.value);
-                            setTimeError(false);
-                          }}
-                        >
-                          {option.label}
-                        </button>
-                      ))}
-                    </div>
-                    <button
-                      type="button"
-                      className="music-text-button music-custom-time-toggle"
-                      aria-expanded={playTime === "custom"}
-                      aria-controls="custom-play-time"
-                      onClick={() => {
-                        setPlayTime(playTime === "custom" ? "any" : "custom");
-                        setTimeError(false);
-                      }}
-                    >
-                      Custom time
-                    </button>
-                    {playTime === "custom" ? (
-                      <div id="custom-play-time" className="music-custom-time">
-                        <label htmlFor="preferred-play-time">
-                          Preferred time
-                        </label>
-                        <input
-                          id="preferred-play-time"
-                          type="time"
-                          value={customTime}
-                          aria-invalid={timeError}
-                          aria-describedby={
-                            timeError
-                              ? "play-time-error play-time-help"
-                              : "play-time-help"
-                          }
-                          onChange={(event) => {
-                            setCustomTime(event.target.value);
-                            setTimeError(false);
-                          }}
-                        />
-                        {timeError ? (
-                          <p id="play-time-error" role="alert">
-                            Choose a time, or select Any time.
-                          </p>
-                        ) : null}
-                      </div>
-                    ) : null}
-                    <p className="music-time-disclaimer">
-                      A preference, not a confirmed time slot.
-                    </p>
-                  </fieldset>
-                  <label htmlFor="dedication">
-                    Make it personal{" "}
-                    <span className="music-muted">(optional)</span>
-                  </label>
-                  <textarea
-                    id="dedication"
-                    aria-describedby="dedication-help"
-                    maxLength={180}
-                    value={dedication}
-                    onChange={(e) => setDedication(e.target.value)}
-                    placeholder="A dedication, a celebration, or just because…"
-                  />
-                  <small id="dedication-help" className="music-muted">
-                    {dedication.length}/180 · Dedications are reviewed by the
-                    band.
-                  </small>
-                  <div className="music-actions">
-                    <button
-                      className="music-primary"
-                      disabled={blocked || taken(selected)}
-                      onClick={submit}
-                    >
-                      <Heart size={17} />
-                      Send request
-                    </button>
-                    <button
-                      className="music-secondary"
-                      onClick={() => {
-                        const songId = selected.id;
-                        setSelected(null);
-                        requestAnimationFrame(() => {
-                          const songButton = document.getElementById(`request-song-${songId}`);
-                          (songButton ?? document.getElementById("music-song-search"))?.focus();
-                        });
-                      }}
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </section>
-              ) : null}
-              <ul className="music-song-list">
-                {results.map((song, i) => (
-                  <li key={song.id}>
-                    <span className={`music-record record-${i % 4}`}>
-                      <Disc3 size={28} />
-                    </span>
-                    <div className="music-song-info">
-                      <strong>{song.title}</strong>
-                      <small>
-                        {song.artist} · {song.genre}
-                      </small>
-                    </div>
-                    <span className="music-duration">{song.duration}</span>
-                    <button
-                      id={`request-song-${song.id}`}
-                      className="music-add"
-                      aria-label={
-                        taken(song)
-                          ? `${song.title} already requested`
-                          : `Request ${song.title}`
-                      }
-                      disabled={blocked || taken(song)}
-                      onClick={() => {
-                        setSelected(song);
-                        setPlayTime("any");
-                        setCustomTime("");
-                        setTimeError(false);
-
-                        setDedication("");
-                      }}
-                    >
-                      {taken(song) ? <Check size={20} /> : <Plus size={20} />}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-              {!results.length ? (
-                <p className="music-empty">
-                  No songs found. Try another artist or category.
-                </p>
-              ) : null}
-            </>
-          ) : view === "mine" ? (
-            <>
-              <section className="music-mine">
-                <div className="music-section-heading">
-                  <h2>My requests</h2>
-                  <span className="music-pill">{mine.length}</span>
-                </div>
-                {mine.length ? (
-                  mine.map((r) => <SongRequestRow key={r.id} request={r} />)
-                ) : (
-                  <p className="music-muted">
-                    Your song’s journey appears here after you send a request.
-                  </p>
-                )}
-              </section>
-            </>
-          ) : (
-            <>
-              <section className="music-audience">
+            {view === "search" ? (
+              <>
                 <div className="music-section-heading">
                   <div>
-                    <p className="music-kicker">THE ROOM HAS GOOD TASTE</p>
-                    <h2>Live requests</h2>
+                    <p className="music-kicker">MAKE IT YOUR NIGHT</p>
+                    <h2>Request a song</h2>
                   </div>
-                  <span className="music-live">
-                    <i /> LIVE
-                  </span>
+                  <span className="music-pill">Unlimited requests</span>
                 </div>
                 <p className="music-muted">
-                  Tap the heart on a song you’d love to hear.
+                  Choose from tonight’s repertoire. The band decides what plays.
                 </p>
-                <ol className="music-vote-list">
-                  {queue.map((r, i) => (
-                    <li key={r.id}>
-                      <span className="music-rank">
-                        {String(i + 1).padStart(2, "0")}
-                      </span>
-                      <div className="music-song-info">
-                        <strong>{r.meta.Track ?? r.title}</strong>
-                        <SongRequestStatus request={r} />
-                        <small>
-                          {r.meta.Artist}
-                          {r.meta["Preferred play time"] &&
-                          r.meta["Preferred play time"] !== "Any time"
-                            ? ` · Preferred: ${r.meta["Preferred play time"]}`
-                            : ""}{" "}
-                          ·{" "}
-                          {
-                            music.filter(
-                              (other) =>
-                                other.meta.Track === r.meta.Track &&
-                                !isTerminal(other.status),
-                            ).length
-                          }{" "}
-                          requests
-                        </small>
+                <label className="music-search">
+                  <Search size={20} />
+                  <input
+                    aria-label="Search songs, artists or genres"
+                    id="music-song-search"
+                    placeholder="Find a song or artist…"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                  />
+                </label>
+                <div className="music-filters" aria-label="Song categories">
+                  <button
+                    aria-pressed={category === "all"}
+                    onClick={() => setCategory("all")}
+                  >
+                    All songs
+                  </button>
+                  {SONG_CATEGORIES.map((c) => (
+                    <button
+                      key={c.id}
+                      aria-pressed={category === c.id}
+                      onClick={() => setCategory(c.id)}
+                    >
+                      {c.label}
+                    </button>
+                  ))}
+                </div>
+                {selected ? (
+                  <section
+                    className="music-request-form"
+                    aria-label="Confirm your song request"
+                  >
+                    <p className="music-kicker">YOUR PICK</p>
+                    <h3 ref={selectedHeading} tabIndex={-1}>
+                      {selected.title}
+                    </h3>
+                    <p className="music-muted">
+                      {selected.artist} · {location.label}
+                    </p>
+                    <fieldset
+                      className="music-time-picker"
+                      aria-describedby="play-time-help"
+                    >
+                      <legend>
+                        <Clock3 size={17} aria-hidden="true" />
+                        When would you like to hear it? <span>(optional)</span>
+                      </legend>
+                      <p id="play-time-help">
+                        Choose a preferred time for this evening. The band will
+                        do its best to fit it into the set.
+                      </p>
+                      <div className="music-time-options">
+                        {[
+                          { value: "any", label: "Any time" },
+                          { value: "21:30", label: "9:30 PM" },
+                          { value: "22:00", label: "10:00 PM" },
+                          { value: "23:00", label: "11:00 PM" },
+                        ].map((option) => (
+                          <button
+                            type="button"
+                            key={option.value}
+                            aria-pressed={playTime === option.value}
+                            onClick={() => {
+                              setPlayTime(option.value);
+                              setTimeError(false);
+                            }}
+                          >
+                            {option.label}
+                          </button>
+                        ))}
                       </div>
                       <button
-                        className="music-vote music-heart"
-                        aria-label={`${r.guestVoted ? "Unlike" : "Like"} ${r.meta.Track ?? r.title}`}
-                        aria-pressed={Boolean(r.guestVoted)}
-                        disabled={!musicRules.votingEnabled}
-                        onClick={() => toggleVote(r.id)}
+                        type="button"
+                        className="music-text-button music-custom-time-toggle"
+                        aria-expanded={playTime === "custom"}
+                        aria-controls="custom-play-time"
+                        onClick={() => {
+                          setPlayTime(playTime === "custom" ? "any" : "custom");
+                          setTimeError(false);
+                        }}
                       >
-                        <Heart size={19} fill={r.guestVoted ? "currentColor" : "none"} aria-hidden="true" />
-                        {r.votes ?? 0}
+                        Custom time
+                      </button>
+                      {playTime === "custom" ? (
+                        <div
+                          id="custom-play-time"
+                          className="music-custom-time"
+                        >
+                          <label htmlFor="preferred-play-time">
+                            Preferred time
+                          </label>
+                          <input
+                            id="preferred-play-time"
+                            type="time"
+                            value={customTime}
+                            aria-invalid={timeError}
+                            aria-describedby={
+                              timeError
+                                ? "play-time-error play-time-help"
+                                : "play-time-help"
+                            }
+                            onChange={(event) => {
+                              setCustomTime(event.target.value);
+                              setTimeError(false);
+                            }}
+                          />
+                          {timeError ? (
+                            <p id="play-time-error" role="alert">
+                              Choose a time, or select Any time.
+                            </p>
+                          ) : null}
+                        </div>
+                      ) : null}
+                      <p className="music-time-disclaimer">
+                        A preference, not a confirmed time slot.
+                      </p>
+                    </fieldset>
+                    <label htmlFor="dedication">
+                      Make it personal{" "}
+                      <span className="music-muted">(optional)</span>
+                    </label>
+                    <textarea
+                      id="dedication"
+                      aria-describedby="dedication-help"
+                      maxLength={180}
+                      value={dedication}
+                      onChange={(e) => setDedication(e.target.value)}
+                      placeholder="A dedication, a celebration, or just because…"
+                    />
+                    <small id="dedication-help" className="music-muted">
+                      {dedication.length}/180 · Dedications are reviewed by the
+                      band.
+                    </small>
+                    <div className="music-actions">
+                      <button
+                        className="music-primary"
+                        disabled={blocked || taken(selected)}
+                        onClick={submit}
+                      >
+                        <Heart size={17} />
+                        Send request
+                      </button>
+                      <button
+                        className="music-secondary"
+                        onClick={() => {
+                          const songId = selected.id;
+                          setSelected(null);
+                          requestAnimationFrame(() => {
+                            const songButton = document.getElementById(
+                              `request-song-${songId}`,
+                            );
+                            (
+                              songButton ??
+                              document.getElementById("music-song-search")
+                            )?.focus();
+                          });
+                        }}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </section>
+                ) : null}
+                <ul className="music-song-list">
+                  {results.map((song, i) => (
+                    <li key={song.id}>
+                      <span className={`music-record record-${i % 4}`}>
+                        <Disc3 size={28} />
+                      </span>
+                      <div className="music-song-info">
+                        <strong>{song.title}</strong>
+                        <small>
+                          {song.artist} · {song.genre}
+                        </small>
+                      </div>
+                      <span className="music-duration">{song.duration}</span>
+                      <button
+                        id={`request-song-${song.id}`}
+                        className="music-add"
+                        aria-label={
+                          taken(song)
+                            ? `${song.title} already requested`
+                            : `Request ${song.title}`
+                        }
+                        disabled={blocked || taken(song)}
+                        onClick={() => {
+                          setSelected(song);
+                          setPlayTime("any");
+                          setCustomTime("");
+                          setTimeError(false);
+
+                          setDedication("");
+                        }}
+                      >
+                        {taken(song) ? <Check size={20} /> : <Plus size={20} />}
                       </button>
                     </li>
                   ))}
-                </ol>
-                {!queue.length ? (
+                </ul>
+                {!results.length ? (
                   <p className="music-empty">
-                    The next great request could be yours.
+                    No songs found. Try another artist or category.
                   </p>
                 ) : null}
-                {!musicRules.votingEnabled ? (
-                  <p className="music-notice">
-                    Song likes are paused for this set.
-                  </p>
-                ) : null}
-                <p className="music-fineprint">
-                  <Check size={15} />
-                  Hearts show what the room loves. The band curates the evening.
-                </p>
-              </section>
-              <section className="music-history">
-                <div className="music-section-heading">
-                  <h2>Played tonight</h2>
-                  <span className="music-pill">{played.length}</span>
-                </div>
-                {played.slice(0, 5).map((r) => (
-                  <div key={r.id} className="music-history-row">
-                    <Check size={16} />
-                    <span>
-                      {r.meta.Track ?? r.title}
-                      <small>{r.meta.Artist}</small>
+              </>
+            ) : view === "mine" ? (
+              <>
+                <section className="music-mine">
+                  <div className="music-section-heading">
+                    <h2>My requests</h2>
+                    <span className="music-pill">{mine.length}</span>
+                  </div>
+                  {mine.length ? (
+                    mine.map((r) => <SongRequestRow key={r.id} request={r} />)
+                  ) : (
+                    <p className="music-muted">
+                      Your song’s journey appears here after you send a request.
+                    </p>
+                  )}
+                </section>
+              </>
+            ) : (
+              <>
+                <section className="music-audience">
+                  <div className="music-section-heading">
+                    <div>
+                      <p className="music-kicker">THE ROOM HAS GOOD TASTE</p>
+                      <h2>Live requests</h2>
+                    </div>
+                    <span className="music-live">
+                      <i /> LIVE
                     </span>
                   </div>
-                ))}
-                {!played.length ? (
                   <p className="music-muted">
-                    The evening is just getting started.
+                    Tap the heart on a song you’d love to hear.
                   </p>
-                ) : null}
-              </section>
-            </>
-          )}
+                  <ol className="music-vote-list">
+                    {queue.map((r, i) => (
+                      <li key={r.id}>
+                        <span className="music-rank">
+                          {String(i + 1).padStart(2, "0")}
+                        </span>
+                        <div className="music-song-info">
+                          <strong>{r.meta.Track ?? r.title}</strong>
+                          <SongRequestStatus request={r} />
+                          <small>
+                            {r.meta.Artist}
+                            {r.meta["Preferred play time"] &&
+                            r.meta["Preferred play time"] !== "Any time"
+                              ? ` · Preferred: ${r.meta["Preferred play time"]}`
+                              : ""}{" "}
+                            ·{" "}
+                            {
+                              music.filter(
+                                (other) =>
+                                  other.meta.Track === r.meta.Track &&
+                                  !isTerminal(other.status),
+                              ).length
+                            }{" "}
+                            requests
+                          </small>
+                        </div>
+                        <button
+                          className="music-vote music-heart"
+                          aria-label={`${r.guestVoted ? "Unlike" : "Like"} ${r.meta.Track ?? r.title}`}
+                          aria-pressed={Boolean(r.guestVoted)}
+                          disabled={!musicRules.votingEnabled}
+                          onClick={() => toggleVote(r.id)}
+                        >
+                          <Heart
+                            size={19}
+                            fill={r.guestVoted ? "currentColor" : "none"}
+                            aria-hidden="true"
+                          />
+                          {r.votes ?? 0}
+                        </button>
+                      </li>
+                    ))}
+                  </ol>
+                  {!queue.length ? (
+                    <p className="music-empty">
+                      The next great request could be yours.
+                    </p>
+                  ) : null}
+                  {!musicRules.votingEnabled ? (
+                    <p className="music-notice">
+                      Song likes are paused for this set.
+                    </p>
+                  ) : null}
+                  <p className="music-fineprint">
+                    <Check size={15} />
+                    Hearts show what the room loves. The band curates the
+                    evening.
+                  </p>
+                </section>
+                <section className="music-history">
+                  <div className="music-section-heading">
+                    <h2>Played tonight</h2>
+                    <span className="music-pill">{played.length}</span>
+                  </div>
+                  {played.slice(0, 5).map((r) => (
+                    <div key={r.id} className="music-history-row">
+                      <Check size={16} />
+                      <span>
+                        {r.meta.Track ?? r.title}
+                        <small>{r.meta.Artist}</small>
+                      </span>
+                    </div>
+                  ))}
+                  {!played.length ? (
+                    <p className="music-muted">
+                      The evening is just getting started.
+                    </p>
+                  ) : null}
+                </section>
+              </>
+            )}
           </div>
         </div>
       </div>

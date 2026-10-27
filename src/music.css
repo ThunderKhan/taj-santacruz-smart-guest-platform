@@ -373,7 +373,9 @@
   margin-top: 8px;
   font-size: 12px;
 }
-.music-request-form > .music-actions > .music-primary { flex: 2; }
+.music-request-form > .music-actions > .music-primary {
+  flex: 2;
+}
 .music-notice {
   display: flex;
   align-items: center;
@@ -447,7 +449,9 @@
   color: var(--apple-muted);
   margin-top: 16px;
 }
-.music-fineprint > svg { flex-shrink: 0; }
+.music-fineprint > svg {
+  flex-shrink: 0;
+}
 .music-evening {
   border-radius: 18px;
   background: var(--music-lime);
@@ -646,8 +650,12 @@
   margin: 8px 0;
   overflow-wrap: anywhere;
 }
-.music-onstage > div { min-width: 0; }
-.music-onstage > button { flex-shrink: 0; }
+.music-onstage > div {
+  min-width: 0;
+}
+.music-onstage > button {
+  flex-shrink: 0;
+}
 .music-onstage p {
   font-size: 12px;
   color: var(--apple-muted);
@@ -1575,7 +1583,9 @@ a[class*="bg-gold-500"] {
 .singer-quick-actions {
   margin-top: 16px;
 }
-.singer-quick-actions > .music-primary { flex: 2; }
+.singer-quick-actions > .music-primary {
+  flex: 2;
+}
 .singer-queue-actions {
   display: flex;
   justify-content: space-between;
@@ -1663,23 +1673,294 @@ a[class*="bg-gold-500"] {
     gap: 10px;
     padding: 14px 12px;
   }
-  .music-centered .music-hero-copy { width: 76%; }
-  .music-time-picker legend { display: block; line-height: 1.5; }
-  .music-time-picker legend > svg { display: inline-block; vertical-align: -3px; margin-right: 6px; }
-  .singer-quick-actions > .music-secondary { flex: 0 0 auto; }
-  .singer-track-heading p { font-size: 13px; }
-  .music-console-dock { gap: 2px; }
-  .music-console-dock button { padding-inline: 14px; }
+  .music-centered .music-hero-copy {
+    width: 76%;
+  }
+  .music-time-picker legend {
+    display: block;
+    line-height: 1.5;
+  }
+  .music-time-picker legend > svg {
+    display: inline-block;
+    vertical-align: -3px;
+    margin-right: 6px;
+  }
+  .singer-quick-actions > .music-secondary {
+    flex: 0 0 auto;
+  }
+  .singer-track-heading p {
+    font-size: 13px;
+  }
+  .music-console-dock {
+    gap: 2px;
+  }
+  .music-console-dock button {
+    padding-inline: 14px;
+  }
 }
 @media (max-height: 650px) {
-  .song-confirmation { padding: 40px 24px 24px; }
-  .song-confirmation-icon { width: 56px; height: 56px; margin-bottom: 16px; }
-  .song-confirmation-track { margin-top: 16px; padding-top: 16px; }
-  .song-confirmation-done { margin-top: 20px; }
+  .song-confirmation {
+    padding: 40px 24px 24px;
+  }
+  .song-confirmation-icon {
+    width: 56px;
+    height: 56px;
+    margin-bottom: 16px;
+  }
+  .song-confirmation-track {
+    margin-top: 16px;
+    padding-top: 16px;
+  }
+  .song-confirmation-done {
+    margin-top: 20px;
+  }
 }
 @media (prefers-reduced-transparency: reduce) {
   .music-console-dock {
     background: var(--apple-parchment);
     backdrop-filter: none;
+  }
+}
+
+/* Three product destinations, one responsive glass navigation. */
+.product-nav-shell {
+  position: sticky;
+  top: 0;
+  z-index: 70;
+  padding: 12px 20px;
+  background: transparent;
+}
+.product-nav-glass {
+  max-width: 1160px;
+  margin: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  min-height: 64px;
+  padding: 8px 14px 8px 18px;
+  border: 1px solid rgb(255 255 255 / 85%);
+  border-radius: 22px;
+  outline: 1px solid rgb(0 0 0 / 6%);
+  background: rgb(245 245 247 / 78%);
+  -webkit-backdrop-filter: saturate(180%) blur(24px);
+  backdrop-filter: saturate(180%) blur(24px);
+}
+.product-wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--apple-ink);
+  font-weight: 700;
+  font-size: 18px;
+  letter-spacing: -0.04em;
+}
+.product-mark {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 11px;
+  background: var(--apple-accent);
+  color: white;
+}
+.product-wordmark small {
+  display: block;
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  color: var(--apple-muted);
+}
+.product-nav-glass nav {
+  display: flex;
+  gap: 5px;
+}
+.product-nav-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 15px;
+  color: var(--apple-caption);
+}
+.product-nav-link.is-active {
+  color: var(--apple-accent);
+  background: rgb(255 255 255 / 85%);
+}
+.product-nav-link:hover {
+  background: rgb(255 255 255 / 60%);
+}
+.product-nav-link:focus-visible,
+.product-wordmark:focus-visible {
+  outline: 2px solid var(--apple-focus);
+  outline-offset: 3px;
+}
+.product-page-shell {
+  min-height: calc(100dvh - 88px);
+  display: flex;
+  flex-direction: column;
+}
+.product-page-content {
+  flex: 1;
+}
+.product-footer {
+  max-width: 1160px;
+  width: 100%;
+  margin: 30px auto 0;
+  padding: 24px;
+  border-top: 1px solid var(--apple-hairline);
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--apple-muted);
+}
+.staff-workspace {
+  max-width: 1160px;
+  width: 100%;
+  margin: auto;
+  padding: 32px 24px 56px;
+}
+.staff-workspace-heading {
+  margin-bottom: 24px;
+}
+.staff-workspace-heading h1 {
+  font-size: clamp(30px, 4vw, 44px);
+  font-weight: 600;
+  letter-spacing: -0.04em;
+  margin: 8px 0;
+}
+.staff-workspace-heading > p:last-child {
+  color: var(--apple-caption);
+  font-size: 14px;
+}
+.staff-workspace-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.staff-workspace-tabs button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  min-height: 44px;
+  border-radius: 999px;
+  background: var(--apple-parchment);
+  color: var(--apple-caption);
+  font-size: 13px;
+}
+.staff-workspace-tabs button[aria-pressed="true"] {
+  background: var(--apple-accent);
+  color: #fff;
+}
+.staff-workspace-tabs span {
+  font-size: 11px;
+  opacity: 0.8;
+}
+.staff-workspace-tabs button:focus-visible {
+  outline: 2px solid var(--apple-focus);
+  outline-offset: 3px;
+}
+.staff-workspace-panel,
+.singer-events-panel {
+  border-radius: 24px;
+  overflow: hidden;
+}
+.singer-events-panel {
+  margin-top: 24px;
+}
+.singer-events-back {
+  margin: 20px 24px 0;
+  color: white;
+  border-color: #a1a1a6;
+}
+.workspace-loading,
+.workspace-unavailable {
+  padding: 60px 24px;
+  text-align: center;
+  color: var(--apple-caption);
+}
+@media (max-width: 640px) {
+  .product-nav-shell {
+    padding: 10px;
+  }
+  .product-nav-glass {
+    padding: 7px;
+    gap: 6px;
+    border-radius: 18px;
+  }
+  .product-wordmark {
+    gap: 0;
+  }
+  .product-wordmark > span:last-child {
+    display: none;
+  }
+  .product-mark {
+    width: 30px;
+    height: 36px;
+    background: transparent;
+    color: var(--apple-accent);
+  }
+  .product-nav-glass nav {
+    flex: 1;
+    justify-content: space-between;
+    gap: 2px;
+  }
+  .product-nav-link {
+    padding: 10px 8px;
+    gap: 5px;
+    font-size: 11px;
+    border-radius: 12px;
+  }
+  .product-nav-link svg {
+    width: 15px;
+  }
+  .staff-workspace {
+    padding: 24px 14px 40px;
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .product-nav-glass {
+    background: var(--apple-parchment);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+@supports not (
+  (backdrop-filter: blur(24px)) or (-webkit-backdrop-filter: blur(24px))
+) {
+  .product-nav-glass {
+    background: var(--apple-parchment);
+  }
+}
+
+.product-skip-link {
+  position: absolute;
+  top: -100px;
+  left: 24px;
+  padding: 12px 18px;
+  border-radius: 12px;
+  background: var(--apple-accent);
+  color: white;
+  z-index: 80;
+}
+.product-skip-link:focus {
+  top: 12px;
+}
+#workspace-content {
+  scroll-margin-top: 100px;
+}
+@media (max-width: 380px) {
+  .product-nav-link {
+    flex-direction: column;
+    gap: 3px;
+    padding: 5px 8px;
+    font-size: 10px;
   }
 }
