@@ -1,9 +1,11 @@
-/* Live music visual language: soft canvas, ink anchors, electric-lime actions. */
+/* Live music visual language: Apple reference surfaces, system typography, and Action Blue. */
 .music-page,
 .music-console {
-  --music-lime: #baff32;
-  --music-ink: #0a0d08;
-  --music-muted: #666e60;
+  --music-lime: var(
+    --apple-accent
+  ); /* legacy name retained for existing components */
+  --music-ink: var(--apple-ink);
+  --music-muted: var(--apple-muted);
   color: var(--music-ink);
   font-size: 14px;
   line-height: 1.5;
@@ -21,7 +23,7 @@
 .music-page h1,
 .music-console h1 {
   font-size: clamp(32px, 4.5vw, 54px);
-  font-weight: 800;
+  font-weight: 600;
   letter-spacing: -0.055em;
   line-height: 1.05;
   margin: 9px 0 14px;
@@ -29,14 +31,14 @@
 .music-page h2,
 .music-console h2 {
   font-size: 23px;
-  font-weight: 750;
+  font-weight: 600;
   letter-spacing: -0.04em;
   line-height: 1.15;
 }
 .music-page h3,
 .music-console h3 {
   font-size: 19px;
-  font-weight: 750;
+  font-weight: 600;
   letter-spacing: -0.025em;
 }
 .music-page-heading {
@@ -51,7 +53,7 @@
 }
 .music-kicker {
   font-size: 10px;
-  font-weight: 800;
+  font-weight: 600;
   letter-spacing: 0.1em;
   line-height: 1.5;
 }
@@ -66,9 +68,9 @@
   white-space: nowrap;
   padding: 7px 11px;
   border-radius: 100px;
-  background: #e8ece2;
+  background: var(--apple-divider);
   font-size: 11px;
-  font-weight: 650;
+  font-weight: 600;
 }
 .music-dot,
 .music-live i {
@@ -79,7 +81,7 @@
   border-radius: 100%;
 }
 .music-dot.is-paused {
-  background: #996b22;
+  background: var(--apple-accent);
 }
 .music-live {
   display: inline-flex;
@@ -87,7 +89,7 @@
   gap: 7px;
   color: var(--music-lime);
   font-size: 10px;
-  font-weight: 750;
+  font-weight: 600;
   letter-spacing: 0.06em;
   white-space: nowrap;
 }
@@ -104,9 +106,9 @@
   position: relative;
   display: flex;
   overflow: hidden;
-  border-radius: 28px;
+  border-radius: 18px;
   background: var(--music-ink);
-  color: #fff;
+  color: var(--apple-on-dark);
   min-height: 270px;
 }
 .music-hero-copy {
@@ -114,14 +116,14 @@
   position: relative;
   z-index: 1;
   width: 68%;
-  background: linear-gradient(90deg, #0a0d08 65%, transparent);
+  background: rgb(0 0 0 / 45%);
 }
 .music-hero h2 {
   font-size: 36px;
   margin: 24px 0 5px;
 }
 .music-hero p {
-  color: #c3cbb9;
+  color: var(--apple-dark-muted);
   font-size: 14px;
 }
 .music-hero > img {
@@ -142,12 +144,12 @@
 }
 .music-hero-footer span {
   font-size: 11px;
-  color: #e6eadd;
+  color: var(--apple-on-dark);
 }
 .music-hero-footer small {
   display: block;
   font-size: 10px;
-  color: #9ca68f;
+  color: var(--apple-dark-muted);
 }
 .music-section-heading {
   display: flex;
@@ -158,15 +160,15 @@
 }
 .music-section-heading .music-kicker {
   margin-bottom: 6px;
-  color: #526c19;
+  color: var(--apple-accent);
 }
 .music-search {
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 15px 18px;
-  background: #fff;
-  border: 1px solid #dce2d5;
+  background: var(--apple-on-dark);
+  border: 1px solid var(--apple-hairline);
   border-radius: 16px;
   margin: 20px 0 12px;
 }
@@ -177,7 +179,7 @@
   min-width: 0;
 }
 .music-search:focus-within {
-  outline: 2px solid #4c650e;
+  outline: 2px solid var(--apple-accent);
   outline-offset: 2px;
 }
 .music-filters {
@@ -188,25 +190,25 @@
 }
 .music-filters button {
   flex-shrink: 0;
-  border: 1px solid #dce2d5;
+  border: 1px solid var(--apple-hairline);
   padding: 8px 13px;
   border-radius: 100px;
   font-size: 11px;
-  color: #505948;
+  color: var(--apple-body);
   cursor: pointer;
 }
 .music-filters button[aria-pressed="true"] {
-  background: #10130e;
-  color: #fff;
-  border-color: #10130e;
+  background: var(--apple-ink);
+  color: var(--apple-on-dark);
+  border-color: var(--apple-ink);
 }
 .music-song-list {
   list-style: none;
   padding: 0;
   margin: 0;
-  background: #fff;
-  border: 1px solid #e1e6da;
-  border-radius: 24px;
+  background: var(--apple-on-dark);
+  border: 1px solid var(--apple-hairline);
+  border-radius: 18px;
   overflow: hidden;
 }
 .music-song-list li {
@@ -214,7 +216,7 @@
   align-items: center;
   gap: 13px;
   padding: 15px 18px;
-  border-bottom: 1px solid #edf0e8;
+  border-bottom: 1px solid var(--apple-divider);
 }
 .music-song-list li:last-child {
   border-bottom: 0;
@@ -226,20 +228,20 @@
   width: 46px;
   height: 46px;
   border-radius: 12px;
-  color: #d1edb9;
-  background: #293e23;
+  color: var(--apple-on-dark);
+  background: var(--apple-dark-surface);
 }
 .record-1 {
-  background: #ded9f0;
-  color: #6d5e91;
+  background: var(--apple-parchment);
+  color: var(--apple-caption);
 }
 .record-2 {
-  background: #f3dbc8;
-  color: #925d33;
+  background: var(--apple-parchment);
+  color: var(--apple-caption);
 }
 .record-3 {
-  background: #d4e7ef;
-  color: #3c6b7f;
+  background: var(--apple-parchment);
+  color: var(--apple-caption);
 }
 .music-song-info {
   min-width: 0;
@@ -259,13 +261,13 @@
   margin-top: 3px;
 }
 .music-duration {
-  color: #6c7463;
+  color: var(--apple-muted);
   font-size: 11px;
 }
 .music-add {
   display: grid;
   place-items: center;
-  background: #eff3e8;
+  background: var(--apple-parchment);
   border-radius: 50%;
   width: 36px;
   height: 36px;
@@ -288,21 +290,21 @@
   min-height: 44px;
   padding: 11px 20px;
   font-size: 12px;
-  font-weight: 750;
+  font-weight: 600;
   cursor: pointer;
   text-align: center;
 }
 .music-primary {
   background: var(--music-lime);
-  color: #10130e;
+  color: var(--apple-ink);
 }
 .music-primary:hover {
-  background: #abea29;
+  background: var(--apple-accent);
 }
 .music-secondary {
-  background: #fff;
-  border: 1px solid #dce2d5;
-  color: #303a29;
+  background: var(--apple-on-dark);
+  border: 1px solid var(--apple-hairline);
+  color: var(--apple-body);
 }
 .music-primary:disabled {
   opacity: 0.4;
@@ -323,18 +325,18 @@
   text-decoration: underline;
   text-underline-offset: 3px;
   padding: 8px;
-  color: #56663d;
+  color: var(--apple-accent);
   cursor: pointer;
 }
 .music-actions > .music-text-button {
   width: 100%;
 }
 .music-request-form {
-  background: #edf4e3;
+  background: var(--apple-parchment);
   padding: 24px;
-  border-radius: 24px;
+  border-radius: 18px;
   margin-top: 18px;
-  border: 1px solid #d7e1c9;
+  border: 1px solid var(--apple-hairline);
 }
 .music-request-form h3 {
   margin-top: 7px;
@@ -342,13 +344,13 @@
 .music-request-form label {
   display: block;
   margin: 20px 0 8px;
-  font-weight: 650;
+  font-weight: 600;
   font-size: 12px;
 }
 .music-request-form textarea {
   display: block;
-  background: #fff;
-  border: 1px solid #d1dbc4;
+  background: var(--apple-on-dark);
+  border: 1px solid var(--apple-hairline);
   border-radius: 14px;
   width: 100%;
   padding: 14px;
@@ -361,26 +363,26 @@
   gap: 9px;
   border-radius: 14px;
   padding: 13px 16px;
-  background: #e8f3d6;
+  background: var(--apple-parchment);
   font-size: 12px;
   margin: 15px 0;
 }
 .music-audience,
 .music-history {
   padding: 24px;
-  background: #fff;
-  border: 1px solid #e1e6da;
-  border-radius: 26px;
+  background: var(--apple-on-dark);
+  border: 1px solid var(--apple-hairline);
+  border-radius: 18px;
 }
 .music-audience .music-section-heading,
 .music-history .music-section-heading {
   margin-top: 0;
 }
 .music-audience .music-live {
-  color: #496318;
+  color: var(--apple-accent);
 }
 .music-audience .music-live i {
-  background: #7da523;
+  background: var(--apple-accent);
 }
 .music-vote-list {
   list-style: none;
@@ -392,12 +394,12 @@
   align-items: center;
   gap: 10px;
   padding: 17px 0;
-  border-bottom: 1px solid #e7ecdf;
+  border-bottom: 1px solid var(--apple-divider);
 }
 .music-rank {
   font-size: 12px;
-  color: #748064;
-  font-weight: 750;
+  color: var(--apple-muted);
+  font-weight: 600;
 }
 .music-vote {
   display: inline-flex;
@@ -406,11 +408,11 @@
   gap: 7px;
   min-width: 56px;
   min-height: 42px;
-  background: #f0f4e9;
-  border: 1px solid #dce5cf;
+  background: var(--apple-parchment);
+  border: 1px solid var(--apple-hairline);
   border-radius: 13px;
   font-size: 12px;
-  font-weight: 750;
+  font-weight: 600;
 }
 .music-vote[aria-pressed="true"] {
   background: var(--music-lime);
@@ -425,11 +427,11 @@
   align-items: center;
   gap: 7px;
   font-size: 11px;
-  color: #68735c;
+  color: var(--apple-muted);
   margin-top: 16px;
 }
 .music-evening {
-  border-radius: 26px;
+  border-radius: 18px;
   background: var(--music-lime);
   padding: 28px;
   margin: 20px 0;
@@ -455,20 +457,20 @@
   align-items: center;
   gap: 10px;
   padding: 13px 0;
-  border-bottom: 1px solid #e8ece2;
+  border-bottom: 1px solid var(--apple-divider);
   font-size: 13px;
 }
 .music-history-row small {
   display: block;
   font-size: 11px;
-  color: #6a7560;
+  color: var(--apple-muted);
 }
 .music-my-row {
   display: flex;
   align-items: center;
   gap: 12px;
-  background: #fff;
-  border-bottom: 1px solid #e8ece2;
+  background: var(--apple-on-dark);
+  border-bottom: 1px solid var(--apple-divider);
   padding: 15px;
   border-radius: 14px;
   margin: 6px 0;
@@ -479,7 +481,7 @@
 }
 .music-empty {
   text-align: center;
-  color: #737e68;
+  color: var(--apple-muted);
   padding: 35px 15px;
   font-size: 13px;
 }
@@ -492,9 +494,9 @@
   grid-template-columns: 1fr 1fr;
   gap: 30px;
   background: var(--music-ink);
-  border-radius: 27px;
+  border-radius: 18px;
   padding: 30px;
-  color: #f4f6ef;
+  color: var(--apple-on-dark);
 }
 .music-console-summary .music-kicker {
   color: var(--music-lime);
@@ -504,7 +506,7 @@
   margin: 15px 0;
 }
 .music-console-summary p:last-child {
-  color: #adb6a1;
+  color: var(--apple-dark-muted);
   font-size: 12px;
 }
 .music-summary-stats {
@@ -514,7 +516,7 @@
   gap: 18px;
 }
 .music-summary-stats > div {
-  border-left: 1px solid #32382b;
+  border-left: 1px solid var(--apple-dark-surface);
   padding-left: 20px;
 }
 .music-summary-stats strong {
@@ -526,7 +528,7 @@
 }
 .music-summary-stats small {
   display: block;
-  color: #b1baa7;
+  color: var(--apple-dark-muted);
   font-size: 9px;
   letter-spacing: 0.06em;
   margin-top: 8px;
@@ -534,7 +536,7 @@
 .music-tabs {
   display: flex;
   padding: 5px;
-  background: #e5e9de;
+  background: var(--apple-parchment);
   border-radius: 18px;
   margin: 25px 0;
 }
@@ -545,8 +547,8 @@
   align-items: center;
   padding: 10px 16px;
   font-size: 11px;
-  font-weight: 650;
-  color: #6b7561;
+  font-weight: 600;
+  color: var(--apple-muted);
   border-radius: 14px;
   cursor: pointer;
 }
@@ -554,7 +556,7 @@
   font-size: 19px;
 }
 .music-tabs button[aria-selected="true"] {
-  background: #0a0d08;
+  background: var(--apple-ink);
   color: var(--music-lime);
 }
 .music-request-grid {
@@ -565,12 +567,12 @@
 }
 .music-request-card {
   padding: 23px;
-  background: #fff;
-  border: 1px solid #e3e8dc;
-  border-radius: 24px;
+  background: var(--apple-on-dark);
+  border: 1px solid var(--apple-hairline);
+  border-radius: 18px;
 }
 .music-request-card.is-approved {
-  background: #edf4e3;
+  background: var(--apple-parchment);
 }
 .music-card-top {
   display: flex;
@@ -580,7 +582,7 @@
   margin-bottom: 8px;
 }
 .music-card-top .music-kicker {
-  color: #68745a;
+  color: var(--apple-muted);
 }
 .music-request-card h3 {
   margin: 5px 0;
@@ -591,12 +593,12 @@
   justify-content: space-between;
   gap: 12px;
   font-size: 10px;
-  color: #6b7561;
+  color: var(--apple-muted);
   margin-top: 24px;
 }
 .music-dedication {
   font-size: 12px;
-  background: #f5f7f0;
+  background: var(--apple-parchment);
   padding: 12px;
   border-radius: 12px;
   margin-top: 15px;
@@ -606,21 +608,21 @@
   align-items: center;
   justify-content: space-between;
   gap: 20px;
-  background: #e8f4d7;
-  border: 1px solid #d0dfbb;
-  border-radius: 24px;
+  background: var(--apple-parchment);
+  border: 1px solid var(--apple-hairline);
+  border-radius: 18px;
   padding: 25px;
   margin-top: 20px;
 }
 .music-onstage .music-live {
-  color: #526c19;
+  color: var(--apple-accent);
 }
 .music-onstage h2 {
   margin: 8px 0;
 }
 .music-onstage p {
   font-size: 12px;
-  color: #667555;
+  color: var(--apple-muted);
 }
 .music-console-dock {
   position: fixed;
@@ -629,12 +631,12 @@
   transform: translateX(-50%);
   display: flex;
   gap: 6px;
-  background: #080b06;
-  border: 1px solid #282e22;
+  background: var(--apple-ink);
+  border: 1px solid var(--apple-dark-surface);
   border-radius: 100px;
   padding: 7px;
   z-index: 45;
-  box-shadow: 0 8px 30px #0a0d0820;
+  box-shadow: none;
   max-width: calc(100vw - 24px);
 }
 .music-console-dock button {
@@ -645,19 +647,19 @@
   min-height: 48px;
   padding: 10px 22px;
   border-radius: 100px;
-  color: #c4cdb8;
+  color: var(--apple-dark-muted);
   font-size: 11px;
   white-space: nowrap;
   cursor: pointer;
 }
 .music-console-dock button[aria-current="page"] {
   background: var(--music-lime);
-  color: #0a0d08;
+  color: var(--apple-ink);
 }
 .music-settings {
-  background: #fff;
-  border: 1px solid #e1e6da;
-  border-radius: 26px;
+  background: var(--apple-on-dark);
+  border: 1px solid var(--apple-hairline);
+  border-radius: 18px;
   padding: 28px;
   margin-top: 25px;
   max-width: 720px;
@@ -671,7 +673,7 @@
   justify-content: space-between;
   gap: 20px;
   padding: 22px 0;
-  border-top: 1px solid #e7ebdf;
+  border-top: 1px solid var(--apple-divider);
 }
 .music-setting-row strong,
 .music-setting-row small {
@@ -679,11 +681,11 @@
 }
 .music-setting-row small {
   font-size: 12px;
-  color: #737d69;
+  color: var(--apple-muted);
   margin-top: 5px;
 }
 .music-setting-row select {
-  border: 1px solid #d2dcc5;
+  border: 1px solid var(--apple-hairline);
   border-radius: 12px;
   padding: 9px 15px;
 }
@@ -691,7 +693,7 @@
   width: 52px;
   height: 30px;
   border-radius: 100px;
-  background: #dce3d2;
+  background: var(--apple-hairline);
   padding: 3px;
   flex-shrink: 0;
   cursor: pointer;
@@ -701,7 +703,7 @@
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--apple-on-dark);
   transition: transform 0.15s;
 }
 .music-switch[aria-checked="true"] {
@@ -711,9 +713,9 @@
   transform: translateX(22px);
 }
 .music-qr {
-  background: #0a0d08;
-  color: #fff;
-  border-radius: 26px;
+  background: var(--apple-ink);
+  color: var(--apple-on-dark);
+  border-radius: 18px;
   padding: 35px;
   text-align: center;
   max-width: 650px;
@@ -723,14 +725,14 @@
   margin: 15px 0 22px;
 }
 .music-qr-image {
-  background: #fff;
+  background: var(--apple-on-dark);
   padding: 16px;
   border-radius: 23px;
   display: inline-flex;
 }
 .music-qr > p {
   font-size: 12px;
-  color: #b0bba3;
+  color: var(--apple-dark-muted);
   margin: 20px 0;
 }
 .music-qr > .music-primary,
@@ -744,7 +746,7 @@
 .music-console button:focus-visible,
 .music-page textarea:focus-visible,
 .music-setting-row select:focus-visible {
-  outline: 2px solid #5c7a14;
+  outline: 2px solid var(--apple-focus);
   outline-offset: 3px;
 }
 @media (max-width: 1023px) {
@@ -771,7 +773,7 @@
     gap: 24px;
   }
   .music-summary-stats {
-    border-top: 1px solid #303729;
+    border-top: 1px solid var(--apple-dark-surface);
     padding-top: 22px;
     justify-content: space-between;
   }
@@ -850,7 +852,7 @@
 .music-workflow-nav {
   display: flex;
   gap: 5px;
-  background: #e5e9de;
+  background: var(--apple-parchment);
   border-radius: 100px;
   padding: 5px;
   margin: 20px 0;
@@ -869,8 +871,8 @@
   cursor: pointer;
 }
 .music-workflow-nav button[aria-current="page"] {
-  background: #0a0d08;
-  color: #baff32;
+  background: var(--apple-ink);
+  color: var(--apple-accent);
 }
 .music-workflow-nav span {
   font-size: 10px;
@@ -895,4 +897,159 @@
     padding: 8px;
     gap: 4px;
   }
+}
+
+/* Visual tokens from the supplied apple_design.md. Layout rules above are unchanged. */
+:root {
+  --apple-accent: #0066cc;
+  --apple-focus: #0071e3;
+  --apple-on-dark-link: #2997ff;
+  --apple-ink: #1d1d1f;
+  --apple-body: #333333;
+  --apple-muted: #6e6e73;
+  --apple-caption: #515154;
+  --apple-dark-muted: #cccccc;
+  --apple-hairline: #e0e0e0;
+  --apple-divider: #f0f0f0;
+  --apple-parchment: #f5f5f7;
+  --apple-on-dark: #ffffff;
+  --apple-dark-surface: #272729;
+}
+.music-page,
+.music-console {
+  font-size: 17px;
+  line-height: 1.47;
+}
+.music-page h1,
+.music-console h1,
+.music-page h2,
+.music-console h2,
+.music-page h3,
+.music-console h3 {
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
+.music-primary,
+.music-primary:hover {
+  background: var(--apple-accent);
+  color: var(--apple-on-dark);
+  font-weight: 400;
+}
+.music-secondary {
+  border-color: var(--apple-accent);
+  color: var(--apple-accent);
+  background: transparent;
+  font-weight: 400;
+}
+.music-search {
+  border-radius: 9999px;
+  background: var(--apple-parchment);
+  border-color: var(--apple-hairline);
+}
+.music-search input {
+  font-size: 17px;
+  letter-spacing: -0.022em;
+}
+.music-request-form,
+.music-request-card.is-approved,
+.music-onstage {
+  background: var(--apple-parchment);
+  border-color: var(--apple-hairline);
+}
+.music-add {
+  background: var(--apple-parchment);
+  color: var(--apple-accent);
+}
+.music-add:hover {
+  background: var(--apple-divider);
+}
+.music-filters button[aria-pressed="true"] {
+  background: var(--apple-on-dark);
+  color: var(--apple-accent);
+  border-color: var(--apple-focus);
+  box-shadow: inset 0 0 0 1px var(--apple-focus);
+}
+.music-workflow-nav button[aria-current="page"],
+.music-tabs button[aria-selected="true"] {
+  background: var(--apple-on-dark);
+  color: var(--apple-accent);
+  box-shadow: none;
+}
+.music-vote[aria-pressed="true"] {
+  background: var(--apple-accent);
+  color: var(--apple-on-dark);
+  border-color: var(--apple-accent);
+}
+.music-console-dock {
+  background: rgb(245 245 247 / 90%);
+  border-color: var(--apple-hairline);
+  backdrop-filter: saturate(180%) blur(20px);
+  box-shadow: none;
+}
+.music-console-dock button {
+  color: var(--apple-body);
+}
+.music-console-dock button[aria-current="page"] {
+  background: var(--apple-accent);
+  color: var(--apple-on-dark);
+}
+.music-live,
+.music-hero-footer,
+.music-console-summary .music-kicker {
+  color: var(--apple-on-dark-link);
+}
+.music-summary-stats strong {
+  color: var(--apple-on-dark);
+}
+.music-live i,
+.music-dot {
+  background: var(--apple-on-dark-link);
+}
+.music-audience .music-live,
+.music-onstage .music-live {
+  color: var(--apple-accent);
+}
+.music-evening {
+  background: var(--apple-parchment);
+}
+.music-record,
+.record-1,
+.record-2,
+.record-3 {
+  background: var(--apple-parchment);
+  color: var(--apple-caption);
+  border-radius: 8px;
+}
+.music-text-button,
+.music-section-heading .music-kicker {
+  color: var(--apple-accent);
+}
+.music-page button:active:not(:disabled),
+.music-console button:active:not(:disabled) {
+  transform: scale(0.95);
+}
+.music-switch[aria-checked="true"] {
+  background: var(--apple-accent);
+}
+.music-page button:focus-visible,
+.music-console button:focus-visible,
+.music-page textarea:focus-visible,
+.music-search:focus-within,
+.music-setting-row select:focus-visible {
+  outline-color: var(--apple-focus);
+}
+/* Existing shared gold-named utilities now use Action Blue, with white action labels. */
+button[class*="bg-gold-500"],
+a[class*="bg-gold-500"] {
+  color: var(--apple-on-dark);
+}
+@media (prefers-reduced-motion: reduce) {
+  .music-page button:active:not(:disabled),
+  .music-console button:active:not(:disabled) {
+    transform: none;
+  }
+}
+
+[class~="rounded-[24px]"] {
+  border-radius: 18px;
 }
