@@ -1,3 +1,4 @@
+import { VSPHFooter } from "@/components/VSPHFooter";
 import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
 import { AudioLines, CalendarDays, LogOut } from "lucide-react";
 import { useRequests } from "@/store/RequestsProvider";
@@ -199,6 +200,7 @@ export function MusicianLayout() {
           </span>
         </div>
       </footer>
+      <VSPHFooter />
     </div>
   );
 }

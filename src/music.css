@@ -1194,3 +1194,19 @@ a[class*="bg-gold-500"] {
     padding: 9px 6px;
   }
 }
+
+.vsph-footer {
+  width: 100%;
+  background: var(--apple-parchment);
+}
+.vsph-footer .hwf-root {
+  max-width: 1400px;
+  margin-inline: auto;
+}
+.vsph-footer .hwf-brand strong {
+  font-weight: 600;
+}
+.vsph-footer .hwf-up {
+  min-height: 44px;
+  padding-inline: 8px;
+}

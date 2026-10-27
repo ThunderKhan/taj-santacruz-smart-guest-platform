@@ -1,14 +1,15 @@
-import { Link, NavLink, Outlet } from 'react-router-dom';
-import { ClipboardList, Home } from 'lucide-react';
-import { useRequests } from '@/store/RequestsProvider';
-import { useRibbonOffset } from '@/hooks/useRibbonOffset';
-import { Wordmark } from '@/components/Brand';
-import { LocationControl } from '@/components/LocationSwitcher';
-import { NotificationBell } from '@/components/NotificationBell';
-import { CountChip } from '@/components/ui/Badge';
-import { PROPERTY } from '@/data/property';
-import { isTerminal } from '@/services/requestEngine';
-import { cx } from '@/utils/format';
+import { VSPHFooter } from "@/components/VSPHFooter";
+import { Link, NavLink, Outlet } from "react-router-dom";
+import { ClipboardList, Home } from "lucide-react";
+import { useRequests } from "@/store/RequestsProvider";
+import { useRibbonOffset } from "@/hooks/useRibbonOffset";
+import { Wordmark } from "@/components/Brand";
+import { LocationControl } from "@/components/LocationSwitcher";
+import { NotificationBell } from "@/components/NotificationBell";
+import { CountChip } from "@/components/ui/Badge";
+import { PROPERTY } from "@/data/property";
+import { isTerminal } from "@/services/requestEngine";
+import { cx } from "@/utils/format";
 
 /**
  * Chrome for the guest-facing QR / tablet experience.
@@ -18,12 +19,16 @@ export function GuestLayout() {
   const offset = useRibbonOffset();
   const { session, requests, location } = useRequests();
 
-  const mine = requests.filter((request) => request.guestRef === session.guestRef);
-  const openCount = mine.filter((request) => !isTerminal(request.status)).length;
+  const mine = requests.filter(
+    (request) => request.guestRef === session.guestRef,
+  );
+  const openCount = mine.filter(
+    (request) => !isTerminal(request.status),
+  ).length;
 
   const navItems = [
-    { to: '/guest', label: 'Home', end: true },
-    { to: '/guest/my-requests', label: 'My requests', end: false },
+    { to: "/guest", label: "Home", end: true },
+    { to: "/guest/my-requests", label: "My requests", end: false },
   ];
 
   return (
@@ -44,7 +49,10 @@ export function GuestLayout() {
             <LocationControl />
           </div>
 
-          <nav aria-label="Guest" className="ml-auto hidden items-center gap-1 sm:flex">
+          <nav
+            aria-label="Guest"
+            className="ml-auto hidden items-center gap-1 sm:flex"
+          >
             {navItems.map((item) => (
               <NavLink
                 key={item.to}
@@ -52,21 +60,21 @@ export function GuestLayout() {
                 end={item.end}
                 className={({ isActive }) =>
                   cx(
-                    'inline-flex h-9 items-center gap-1.5 rounded-[3px] px-3 text-[13.5px] font-medium transition-colors',
-                    'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-600',
+                    "inline-flex h-9 items-center gap-1.5 rounded-[3px] px-3 text-[13.5px] font-medium transition-colors",
+                    "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-600",
                     isActive
-                      ? 'bg-ink-900 text-ivory-50'
-                      : 'text-warm-600 hover:bg-cream-200 hover:text-ink-900',
+                      ? "bg-ink-900 text-ivory-50"
+                      : "text-warm-600 hover:bg-cream-200 hover:text-ink-900",
                   )
                 }
               >
-                {item.label === 'Home' ? (
+                {item.label === "Home" ? (
                   <Home className="h-4 w-4" strokeWidth={1.6} />
                 ) : (
                   <ClipboardList className="h-4 w-4" strokeWidth={1.6} />
                 )}
                 {item.label}
-                {item.label === 'My requests' && openCount > 0 ? (
+                {item.label === "My requests" && openCount > 0 ? (
                   <CountChip value={openCount} />
                 ) : null}
               </NavLink>
@@ -104,9 +112,9 @@ export function GuestLayout() {
                 {PROPERTY.disclosure}
               </p>
               <p className="mt-3 text-[12.5px] leading-relaxed text-warm-500">
-                Demonstration content only — menus, prices, availability, timings and local
-                recommendations are illustrative sample data and have not been verified against a
-                real property.
+                Demonstration content only — menus, prices, availability,
+                timings and local recommendations are illustrative sample data
+                and have not been verified against a real property.
               </p>
             </div>
 
@@ -115,10 +123,14 @@ export function GuestLayout() {
                 <p className="eyebrow-sm mb-3 text-warm-500">Experiences</p>
                 <ul className="space-y-2 text-warm-700">
                   <li>
-                    <Link to="/guest/music" className="hover:text-ink-900">Live Music Requests</Link>
+                    <Link to="/guest/music" className="hover:text-ink-900">
+                      Live Music Requests
+                    </Link>
                   </li>
                   <li>
-                    <Link to="/guest/occasions" className="hover:text-ink-900">Plan a Celebration</Link>
+                    <Link to="/guest/occasions" className="hover:text-ink-900">
+                      Plan a Celebration
+                    </Link>
                   </li>
                 </ul>
               </div>
@@ -126,10 +138,17 @@ export function GuestLayout() {
                 <p className="eyebrow-sm mb-3 text-warm-500">Your stay</p>
                 <ul className="space-y-2 text-warm-700">
                   <li>
-                    <Link to="/guest" className="hover:text-ink-900">Home</Link>
+                    <Link to="/guest" className="hover:text-ink-900">
+                      Home
+                    </Link>
                   </li>
                   <li>
-                    <Link to="/guest/my-requests" className="hover:text-ink-900">My requests</Link>
+                    <Link
+                      to="/guest/my-requests"
+                      className="hover:text-ink-900"
+                    >
+                      My requests
+                    </Link>
                   </li>
                 </ul>
               </div>
@@ -148,10 +167,14 @@ export function GuestLayout() {
             <span className="eyebrow-sm text-warm-500">
               Smart Hotel Guest Service Platform · Concept prototype
             </span>
-            <span>No real guest data, payments or bookings are processed by this prototype.</span>
+            <span>
+              No real guest data, payments or bookings are processed by this
+              prototype.
+            </span>
           </div>
         </div>
       </footer>
+      <VSPHFooter />
     </div>
   );
 }
