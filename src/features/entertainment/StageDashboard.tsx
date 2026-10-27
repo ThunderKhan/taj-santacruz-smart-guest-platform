@@ -1,6 +1,10 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
+import { useAuth } from "@/store/AuthProvider";
+import { isEnquiryTerminal } from "@/services/enquiryEngine";
 import {
   AudioLines,
+  CalendarDays,
   Check,
   Clock3,
   Pause,
@@ -20,12 +24,19 @@ type Tab = "all" | "new" | "queue" | "history" | "settings" | "qr";
 export function StageDashboard() {
   const {
     requests,
+    enquiries,
     transition,
     setStage,
     setDedicationHidden,
     musicRules,
     updateMusicRules,
   } = useRequests();
+  const { session } = useAuth();
+  const myEventsCount = enquiries.filter(
+    (enquiry) =>
+      enquiry.assignedMusicianId === session?.musicianId &&
+      !isEnquiryTerminal(enquiry.status),
+  ).length;
   const [tab, setTab] = useState<Tab>("all");
   const [query, setQuery] = useState("");
   const matches = (r: ServiceRequest) =>
@@ -269,6 +280,10 @@ export function StageDashboard() {
             set the mood.
           </h2>
           <p>You choose the songs. We’ll keep the requests in order.</p>
+          <Link className="music-summary-events" to="/musician/events">
+            <CalendarDays size={17} aria-hidden="true" />
+            My events<span>{myEventsCount}</span>
+          </Link>
         </div>
         <div className="music-summary-stats">
           <div>

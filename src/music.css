@@ -627,7 +627,7 @@
 .music-console-dock {
   position: fixed;
   bottom: 22px;
-  left: calc(50% + 118px);
+  left: 50%;
   transform: translateX(-50%);
   display: flex;
   gap: 6px;
@@ -1422,25 +1422,101 @@ a[class*="bg-gold-500"] {
   backdrop-filter: saturate(180%) blur(16px);
   min-height: 44px;
   min-width: 58px;
-  transition: background-color .18s ease, border-color .18s ease;
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease;
 }
 .music-vote.music-heart[aria-pressed="true"] {
   color: #ba1b63;
   background: rgb(255 214 235 / 72%);
   border-color: rgb(207 48 119 / 40%);
 }
-.music-heart[aria-pressed="true"] svg { animation: heart-like .25s ease-out; }
-.music-vote.music-heart:focus-visible { outline-color: #c52a72; }
-@keyframes heart-like { 0% { transform: scale(.8); } 55% { transform: scale(1.18); } 100% { transform: scale(1); } }
-@supports not ((backdrop-filter: blur(16px)) or (-webkit-backdrop-filter: blur(16px))) {
-  .music-vote.music-heart { background: #fff0f8; }
-  .music-vote.music-heart[aria-pressed="true"] { background: #ffd6eb; }
+.music-heart[aria-pressed="true"] svg {
+  animation: heart-like 0.25s ease-out;
+}
+.music-vote.music-heart:focus-visible {
+  outline-color: #c52a72;
+}
+@keyframes heart-like {
+  0% {
+    transform: scale(0.8);
+  }
+  55% {
+    transform: scale(1.18);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@supports not (
+  (backdrop-filter: blur(16px)) or (-webkit-backdrop-filter: blur(16px))
+) {
+  .music-vote.music-heart {
+    background: #fff0f8;
+  }
+  .music-vote.music-heart[aria-pressed="true"] {
+    background: #ffd6eb;
+  }
 }
 @media (prefers-reduced-transparency: reduce) {
-  .music-vote.music-heart { background: #fff0f8; -webkit-backdrop-filter: none; backdrop-filter: none; }
-  .music-vote.music-heart[aria-pressed="true"] { background: #ffd6eb; }
+  .music-vote.music-heart {
+    background: #fff0f8;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .music-vote.music-heart[aria-pressed="true"] {
+    background: #ffd6eb;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
-  .music-vote.music-heart { transition: none; }
-  .music-heart[aria-pressed="true"] svg { animation: none; }
+  .music-vote.music-heart {
+    transition: none;
+  }
+  .music-heart[aria-pressed="true"] svg {
+    animation: none;
+  }
+}
+
+/* With the rail removed, every singer section shares the viewport centerline. */
+.musician-centered-content {
+  width: 100%;
+  max-width: 790px;
+  margin-inline: auto;
+}
+.music-summary-events {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 44px;
+  margin-top: 20px;
+  padding: 10px 16px;
+  border: 1px solid rgb(255 255 255 / 22%);
+  border-radius: 9999px;
+  color: #fff;
+  background: rgb(255 255 255 / 7%);
+  font-size: 13px;
+}
+.music-summary-events span {
+  display: grid;
+  place-items: center;
+  min-width: 22px;
+  min-height: 22px;
+  padding: 0 5px;
+  border-radius: 9999px;
+  background: rgb(255 255 255 / 15%);
+  font-size: 11px;
+}
+.music-summary-events:focus-visible,
+.musician-back-link:focus-visible {
+  outline: 2px solid var(--apple-on-dark-link);
+  outline-offset: 4px;
+}
+.musician-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  margin: 20px 24px 0;
+  color: var(--apple-accent);
+  font-size: 13px;
 }
