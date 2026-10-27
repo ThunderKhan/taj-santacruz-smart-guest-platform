@@ -1215,10 +1215,147 @@ a[class*="bg-gold-500"] {
 }
 
 /* Keep the receipt legible when blur is unavailable or transparency is reduced. */
-@supports not ((backdrop-filter: blur(20px)) or (-webkit-backdrop-filter: blur(20px))) {
-  .song-confirmation { background: var(--apple-parchment); border-color: var(--apple-hairline); }
+@supports not (
+  (backdrop-filter: blur(20px)) or (-webkit-backdrop-filter: blur(20px))
+) {
+  .song-confirmation {
+    background: var(--apple-parchment);
+    border-color: var(--apple-hairline);
+  }
 }
 @media (prefers-reduced-transparency: reduce) {
-  .song-confirmation { background: var(--apple-parchment); -webkit-backdrop-filter: none; backdrop-filter: none; }
-  .song-confirmation::backdrop { -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .song-confirmation {
+    background: var(--apple-parchment);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .song-confirmation::backdrop {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/* Timing follows song selection: familiar choices first, custom entry on demand. */
+.music-time-picker {
+  border: 0;
+  padding: 0;
+  margin: 24px 0 4px;
+  min-width: 0;
+}
+.music-time-picker legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--apple-ink);
+}
+.music-time-picker legend span {
+  color: var(--apple-muted);
+  font-size: 12px;
+  font-weight: 400;
+}
+.music-time-picker > p:first-of-type {
+  font-size: 12px;
+  color: var(--apple-caption);
+  line-height: 1.5;
+  margin: 8px 0 14px;
+}
+.music-time-options {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+.music-time-options button {
+  min-height: 44px;
+  border: 1px solid var(--apple-hairline);
+  border-radius: 12px;
+  color: var(--apple-body);
+  background: var(--apple-on-dark);
+  font-size: 13px;
+  cursor: pointer;
+}
+.music-time-options button[aria-pressed="true"] {
+  border-color: var(--apple-accent);
+  color: var(--apple-accent);
+  box-shadow: inset 0 0 0 1px var(--apple-accent);
+  background: #edf5ff;
+  font-weight: 600;
+}
+.music-custom-time-toggle {
+  min-height: 44px;
+  padding-left: 0;
+}
+.music-custom-time {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 14px;
+  background: var(--apple-on-dark);
+  border-radius: 12px;
+}
+.music-request-form .music-custom-time label {
+  margin: 0;
+  flex: 1;
+}
+.music-custom-time input {
+  padding: 10px 12px;
+  min-height: 44px;
+  border: 1px solid var(--apple-hairline);
+  border-radius: 8px;
+  font-size: 16px;
+  color: var(--apple-ink);
+  color-scheme: light;
+}
+.music-custom-time input:focus-visible {
+  outline: 2px solid var(--apple-focus);
+  outline-offset: 3px;
+}
+.music-custom-time p {
+  width: 100%;
+  font-size: 12px;
+  color: #b42318;
+}
+.music-time-disclaimer {
+  font-size: 11px;
+  color: var(--apple-muted);
+}
+.music-preferred-time {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  color: var(--apple-accent);
+  font-size: 13px;
+  margin-top: 14px;
+  padding: 10px 12px;
+  background: #edf5ff;
+  border-radius: 10px;
+}
+.music-preferred-time span {
+  margin-left: auto;
+  font-size: 10px;
+  color: var(--apple-caption);
+}
+.song-confirmation-time {
+  display: inline-block;
+  padding: 10px 15px;
+  background: rgb(255 255 255 / 50%);
+  border-radius: 12px;
+  margin-top: 18px;
+  color: var(--apple-accent);
+  font-size: 14px;
+}
+.song-confirmation-time small {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--apple-caption);
+}
+@media (max-width: 480px) {
+  .music-time-options {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }

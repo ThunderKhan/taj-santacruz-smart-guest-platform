@@ -2,6 +2,7 @@ import { useState } from "react";
 import {
   AudioLines,
   Check,
+  Clock3,
   Pause,
   Play,
   QrCode,
@@ -99,6 +100,14 @@ export function StageDashboard() {
         </div>
         <h3>{r.meta.Track ?? r.title}</h3>
         <p className="music-muted">{r.meta.Artist}</p>
+        {r.meta["Preferred play time"] &&
+        r.meta["Preferred play time"] !== "Any time" ? (
+          <p className="music-preferred-time">
+            <Clock3 size={16} aria-hidden="true" />
+            Preferred · {r.meta["Preferred play time"]}
+            <span>Guest preference</span>
+          </p>
+        ) : null}
         {r.guestNote ? (
           <div className="music-dedication">
             <p>“{r.guestNote}”</p>

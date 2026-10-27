@@ -7,6 +7,7 @@ import {
   Check,
   Disc3,
   Heart,
+  Clock3,
   Plus,
   Search,
   ThumbsUp,
@@ -33,9 +34,20 @@ export function MusicRequests() {
   const [category, setCategory] = useState<SongCategory | "all">("all");
   const [selected, setSelected] = useState<Song | null>(null);
   const [dedication, setDedication] = useState("");
+  const [playTime, setPlayTime] = useState("any");
+  const [customTime, setCustomTime] = useState("");
+  const [timeError, setTimeError] = useState(false);
+  const requestedTime = playTime === "custom" ? customTime : playTime;
+  const timeLabel =
+    requestedTime === "any"
+      ? "Any time"
+      : /^\d{2}:\d{2}$/.test(requestedTime)
+        ? `${Number(requestedTime.split(":")[0]) % 12 || 12}:${requestedTime.split(":")[1]} ${Number(requestedTime.split(":")[0]) >= 12 ? "PM" : "AM"}`
+        : "";
   const [confirmation, setConfirmation] = useState<{
     title: string;
     artist: string;
+    preferredTime: string;
   } | null>(null);
   const music = requests.filter((r) => r.service === "music");
   const mine = music
@@ -60,6 +72,11 @@ export function MusicRequests() {
     mine.some((r) => r.meta.Track === song.title && !isTerminal(r.status));
   function submit() {
     if (!selected || blocked || taken(selected)) return;
+    if (!timeLabel) {
+      setTimeError(true);
+      document.getElementById("preferred-play-time")?.focus();
+      return;
+    }
     createRequest(
       {
         service: "music",
@@ -72,11 +89,16 @@ export function MusicRequests() {
           Artist: selected.artist,
           Genre: selected.genre,
           Dedication: dedication.trim() ? "Yes" : "No",
+          "Preferred play time": timeLabel,
         },
       },
       { silent: true },
     );
-    setConfirmation({ title: selected.title, artist: selected.artist });
+    setConfirmation({
+      title: selected.title,
+      artist: selected.artist,
+      preferredTime: timeLabel,
+    });
     setSelected(null);
     setDedication("");
     setView("mine");
@@ -193,6 +215,81 @@ export function MusicRequests() {
                   <p className="music-muted">
                     {selected.artist} · {location.label}
                   </p>
+                  <fieldset
+                    className="music-time-picker"
+                    aria-describedby="play-time-help"
+                  >
+                    <legend>
+                      <Clock3 size={17} aria-hidden="true" />
+                      When would you like to hear it? <span>(optional)</span>
+                    </legend>
+                    <p id="play-time-help">
+                      Choose a preferred time for this evening. The band will do
+                      its best to fit it into the set.
+                    </p>
+                    <div className="music-time-options">
+                      {[
+                        { value: "any", label: "Any time" },
+                        { value: "21:30", label: "9:30 PM" },
+                        { value: "22:00", label: "10:00 PM" },
+                        { value: "23:00", label: "11:00 PM" },
+                      ].map((option) => (
+                        <button
+                          type="button"
+                          key={option.value}
+                          aria-pressed={playTime === option.value}
+                          onClick={() => {
+                            setPlayTime(option.value);
+                            setTimeError(false);
+                          }}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                    <button
+                      type="button"
+                      className="music-text-button music-custom-time-toggle"
+                      aria-expanded={playTime === "custom"}
+                      aria-controls="custom-play-time"
+                      onClick={() => {
+                        setPlayTime(playTime === "custom" ? "any" : "custom");
+                        setTimeError(false);
+                      }}
+                    >
+                      Choose another time
+                    </button>
+                    {playTime === "custom" ? (
+                      <div id="custom-play-time" className="music-custom-time">
+                        <label htmlFor="preferred-play-time">
+                          Preferred time
+                        </label>
+                        <input
+                          id="preferred-play-time"
+                          type="time"
+                          value={customTime}
+                          aria-invalid={timeError}
+                          aria-describedby={
+                            timeError
+                              ? "play-time-error play-time-help"
+                              : "play-time-help"
+                          }
+                          onChange={(event) => {
+                            setCustomTime(event.target.value);
+                            setTimeError(false);
+                          }}
+                        />
+                        {timeError ? (
+                          <p id="play-time-error" role="alert">
+                            Choose a time, or select Any time.
+                          </p>
+                        ) : null}
+                      </div>
+                    ) : null}
+                    <p className="music-time-disclaimer">
+                      A preference, not a confirmed time slot.
+                    </p>
+                  </fieldset>
                   <label htmlFor="dedication">
                     Make it personal{" "}
                     <span className="music-muted">(optional)</span>
@@ -250,6 +347,9 @@ export function MusicRequests() {
                       disabled={blocked || taken(song)}
                       onClick={() => {
                         setSelected(song);
+                        setPlayTime("any");
+                        setCustomTime("");
+                        setTimeError(false);
 
                         setDedication("");
                       }}
@@ -282,7 +382,12 @@ export function MusicRequests() {
                       <div>
                         <strong>{r.meta.Track ?? r.title}</strong>
                         <small>
-                          {r.meta.Artist} ·{" "}
+                          {r.meta.Artist}
+                          {r.meta["Preferred play time"] &&
+                          r.meta["Preferred play time"] !== "Any time"
+                            ? ` · Preferred: ${r.meta["Preferred play time"]}`
+                            : ""}{" "}
+                          ·{" "}
                           {
                             music.filter(
                               (other) =>
@@ -328,7 +433,12 @@ export function MusicRequests() {
                       <div className="music-song-info">
                         <strong>{r.meta.Track ?? r.title}</strong>
                         <small>
-                          {r.meta.Artist} ·{" "}
+                          {r.meta.Artist}
+                          {r.meta["Preferred play time"] &&
+                          r.meta["Preferred play time"] !== "Any time"
+                            ? ` · Preferred: ${r.meta["Preferred play time"]}`
+                            : ""}{" "}
+                          ·{" "}
                           {
                             music.filter(
                               (other) =>

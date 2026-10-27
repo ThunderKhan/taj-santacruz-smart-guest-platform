@@ -6,7 +6,7 @@ export function SongRequestConfirmation({
   song,
   onClose,
 }: {
-  song: { title: string; artist: string };
+  song: { title: string; artist: string; preferredTime?: string };
   onClose: () => void;
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -50,6 +50,12 @@ export function SongRequestConfirmation({
       <div className="song-confirmation-track">
         <h3>{song.title}</h3>
         <p>{song.artist}</p>
+        {song.preferredTime && song.preferredTime !== "Any time" ? (
+          <div className="song-confirmation-time">
+            Preferred play time · {song.preferredTime}
+            <small>Subject to the band’s approval</small>
+          </div>
+        ) : null}
       </div>
       <p id="song-confirmation-description">
         Your song request is with the band.
