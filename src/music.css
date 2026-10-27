@@ -820,3 +820,79 @@
     transition: none;
   }
 }
+
+/* One centered guest workflow on both desktop and mobile. Existing visual tokens stay intact. */
+.music-centered {
+  max-width: 790px;
+}
+.music-centered .music-page-heading {
+  margin-bottom: 22px;
+}
+.music-centered .music-page-heading h1 {
+  font-size: clamp(23px, 3.5vw, 32px);
+}
+.music-centered .music-guest-grid {
+  display: block;
+}
+.music-centered .music-hero {
+  min-height: 200px;
+}
+.music-centered .music-hero-copy {
+  padding: 24px;
+}
+.music-centered .music-hero h2 {
+  font-size: 30px;
+  margin-top: 15px;
+}
+.music-centered .music-hero-footer {
+  margin-top: 20px;
+}
+.music-workflow-nav {
+  display: flex;
+  gap: 5px;
+  background: #e5e9de;
+  border-radius: 100px;
+  padding: 5px;
+  margin: 20px 0;
+}
+.music-workflow-nav button {
+  display: flex;
+  flex: 1;
+  justify-content: center;
+  align-items: center;
+  gap: 7px;
+  min-height: 44px;
+  padding: 10px;
+  border-radius: 100px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.music-workflow-nav button[aria-current="page"] {
+  background: #0a0d08;
+  color: #baff32;
+}
+.music-workflow-nav span {
+  font-size: 10px;
+  opacity: 0.75;
+}
+.music-centered .music-request-form {
+  margin: 0 0 18px;
+}
+.music-centered .music-history {
+  margin-top: 20px;
+}
+@media (max-width: 540px) {
+  .music-centered .music-page-heading {
+    flex-direction: column;
+    gap: 12px;
+  }
+  .music-centered .music-hero {
+    min-height: 185px;
+  }
+  .music-workflow-nav button {
+    font-size: 11px;
+    padding: 8px;
+    gap: 4px;
+  }
+}
