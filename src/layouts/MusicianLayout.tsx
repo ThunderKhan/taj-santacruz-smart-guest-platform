@@ -26,7 +26,9 @@ export function MusicianLayout() {
   const musician = musicians.find((entry) => entry.id === session?.musicianId);
 
   return (
-    <div className="min-h-dvh bg-ivory-50 text-ink-900">
+    <div
+      className={`min-h-dvh bg-ivory-50 text-ink-900${route.pathname === "/musician/live" ? " musician-live-shell" : ""}`}
+    >
       <header
         className="sticky z-50 border-b border-white/10 bg-ink-950"
         style={{ top: offset }}
@@ -57,6 +59,7 @@ export function MusicianLayout() {
             <Button
               variant="outlineDark"
               size="sm"
+              aria-label="Sign out"
               onClick={() => {
                 signOut();
                 navigate("/login", { replace: true });

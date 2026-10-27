@@ -62,7 +62,22 @@ export function StageDashboard() {
     .sort((a, b) => b.updatedAt - a.updatedAt);
   const url = `${window.location.origin}/guest/music?loc=lounge-table-04`;
   const actor = "Performer · live console";
+  // Keep keyboard triage in the same action column after a request leaves the inbox.
+  function restoreTriageFocus(id: string, action: "accept" | "decline") {
+    const buttons = Array.from(
+      document.querySelectorAll<HTMLButtonElement>(`[data-triage="${action}"]`),
+    );
+    const current = buttons.findIndex((button) => button.dataset.request === id);
+    const next = buttons[current + 1] ?? buttons[current - 1];
+    const hadFocus = buttons[current] === document.activeElement;
+    if (hadFocus) {
+      requestAnimationFrame(() => {
+        (next?.isConnected ? next : document.getElementById("tab-new"))?.focus();
+      });
+    }
+  }
   function reject(r: ServiceRequest) {
+    restoreTriageFocus(r.id, "decline");
     transition(r.id, "rejected", {
       by: actor,
       note: "Unable to perform this song in tonight’s set. Please choose another from our repertoire.",
@@ -74,6 +89,7 @@ export function StageDashboard() {
     { id: "history", label: "History", count: history.length },
   ];
   function accept(r: ServiceRequest) {
+    restoreTriageFocus(r.id, "accept");
     transition(r.id, "in_progress", {
       by: actor,
       stage: "queued",
@@ -126,6 +142,8 @@ export function StageDashboard() {
           <div className="music-actions singer-quick-actions">
             <button
               className="music-secondary"
+              data-triage="decline"
+              data-request={r.id}
               aria-label={`Decline ${r.meta.Track ?? r.title}`}
               onClick={() => reject(r)}
             >
@@ -133,6 +151,8 @@ export function StageDashboard() {
             </button>
             <button
               className="music-primary"
+              data-triage="accept"
+              data-request={r.id}
               aria-label={`Accept ${r.meta.Track ?? r.title} and add to queue`}
               onClick={() => accept(r)}
             >
@@ -469,6 +489,7 @@ export function StageDashboard() {
           <section
             id="live-request-panel"
             role="tabpanel"
+            tabIndex={0}
             aria-labelledby={`tab-${tab}`}
             className="music-activity"
           >
@@ -512,6 +533,10 @@ export function StageDashboard() {
           <span>Guest QR</span>
         </button>
         <button
+          aria-label={
+            musicRules.paused ? "Resume song requests" : "Pause song requests"
+          }
+          aria-pressed={musicRules.paused}
           onClick={() => updateMusicRules({ paused: !musicRules.paused })}
         >
           {musicRules.paused ? <Play size={18} /> : <Pause size={18} />}

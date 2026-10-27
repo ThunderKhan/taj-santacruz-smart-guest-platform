@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { SongRequestConfirmation } from "./SongRequestConfirmation";
 import {
   AudioLines,
@@ -28,6 +28,10 @@ export function MusicRequests() {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<SongCategory | "all">("all");
   const [selected, setSelected] = useState<Song | null>(null);
+  const selectedHeading = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    if (selected) selectedHeading.current?.focus();
+  }, [selected]);
   const [dedication, setDedication] = useState("");
   const [playTime, setPlayTime] = useState("any");
   const [customTime, setCustomTime] = useState("");
@@ -103,7 +107,12 @@ export function MusicRequests() {
       {confirmation ? (
         <SongRequestConfirmation
           song={confirmation}
-          onClose={() => setConfirmation(null)}
+          onClose={() => {
+            setConfirmation(null);
+            requestAnimationFrame(() => {
+              document.getElementById("guest-tab-mine")?.focus();
+            });
+          }}
         />
       ) : null}
       <header className="music-page-heading">
@@ -136,21 +145,48 @@ export function MusicRequests() {
               alt="Live music stage at the lounge"
             />
           </section>
-          <nav className="music-workflow-nav" aria-label="Guest music sections">
+          <nav
+            className="music-workflow-nav"
+            role="tablist"
+            aria-label="Guest music sections"
+            onKeyDown={(event) => {
+              const views = ["search", "mine", "queue"] as const;
+              if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key))
+                return;
+              event.preventDefault();
+              const next =
+                event.key === "Home" ? 0 : event.key === "End" ? 2
+                  : (views.indexOf(view) + (event.key === "ArrowRight" ? 1 : -1) + 3) % 3;
+              setView(views[next]);
+              document.getElementById(`guest-tab-${views[next]}`)?.focus();
+            }}
+          >
             <button
-              aria-current={view === "search" ? "page" : undefined}
+              id="guest-tab-search"
+              role="tab"
+              aria-controls="guest-music-panel"
+              aria-selected={view === "search"}
+              tabIndex={view === "search" ? 0 : -1}
               onClick={() => setView("search")}
             >
               Request a song
             </button>
             <button
-              aria-current={view === "mine" ? "page" : undefined}
+              id="guest-tab-mine"
+              role="tab"
+              aria-controls="guest-music-panel"
+              aria-selected={view === "mine"}
+              tabIndex={view === "mine" ? 0 : -1}
               onClick={() => setView("mine")}
             >
               My requests <span>{mine.length}</span>
             </button>
             <button
-              aria-current={view === "queue" ? "page" : undefined}
+              id="guest-tab-queue"
+              role="tab"
+              aria-controls="guest-music-panel"
+              aria-selected={view === "queue"}
+              tabIndex={view === "queue" ? 0 : -1}
               onClick={() => setView("queue")}
             >
               Live queue <span>{queue.length}</span>
@@ -162,6 +198,12 @@ export function MusicRequests() {
               and vote.
             </p>
           ) : null}
+          <div
+            id="guest-music-panel"
+            role="tabpanel"
+            aria-labelledby={`guest-tab-${view}`}
+            tabIndex={0}
+          >
           {view === "search" ? (
             <>
               <div className="music-section-heading">
@@ -178,6 +220,7 @@ export function MusicRequests() {
                 <Search size={20} />
                 <input
                   aria-label="Search songs, artists or genres"
+                  id="music-song-search"
                   placeholder="Find a song or artist…"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
@@ -206,7 +249,9 @@ export function MusicRequests() {
                   aria-label="Confirm your song request"
                 >
                   <p className="music-kicker">YOUR PICK</p>
-                  <h3>{selected.title}</h3>
+                  <h3 ref={selectedHeading} tabIndex={-1}>
+                    {selected.title}
+                  </h3>
                   <p className="music-muted">
                     {selected.artist} · {location.label}
                   </p>
@@ -252,7 +297,7 @@ export function MusicRequests() {
                         setTimeError(false);
                       }}
                     >
-                      Choose another time
+                      Custom time
                     </button>
                     {playTime === "custom" ? (
                       <div id="custom-play-time" className="music-custom-time">
@@ -291,13 +336,13 @@ export function MusicRequests() {
                   </label>
                   <textarea
                     id="dedication"
-                    autoFocus
+                    aria-describedby="dedication-help"
                     maxLength={180}
                     value={dedication}
                     onChange={(e) => setDedication(e.target.value)}
                     placeholder="A dedication, a celebration, or just because…"
                   />
-                  <small className="music-muted">
+                  <small id="dedication-help" className="music-muted">
                     {dedication.length}/180 · Dedications are reviewed by the
                     band.
                   </small>
@@ -312,7 +357,14 @@ export function MusicRequests() {
                     </button>
                     <button
                       className="music-secondary"
-                      onClick={() => setSelected(null)}
+                      onClick={() => {
+                        const songId = selected.id;
+                        setSelected(null);
+                        requestAnimationFrame(() => {
+                          const songButton = document.getElementById(`request-song-${songId}`);
+                          (songButton ?? document.getElementById("music-song-search"))?.focus();
+                        });
+                      }}
                     >
                       Cancel
                     </button>
@@ -333,6 +385,7 @@ export function MusicRequests() {
                     </div>
                     <span className="music-duration">{song.duration}</span>
                     <button
+                      id={`request-song-${song.id}`}
                       className="music-add"
                       aria-label={
                         taken(song)
@@ -467,6 +520,7 @@ export function MusicRequests() {
               </section>
             </>
           )}
+          </div>
         </div>
       </div>
     </main>
