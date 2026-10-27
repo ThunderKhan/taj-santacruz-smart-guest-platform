@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { SongRequestConfirmation } from "./SongRequestConfirmation";
 import { Link } from "react-router-dom";
 import {
   ArrowUpRight,
@@ -32,7 +33,10 @@ export function MusicRequests() {
   const [category, setCategory] = useState<SongCategory | "all">("all");
   const [selected, setSelected] = useState<Song | null>(null);
   const [dedication, setDedication] = useState("");
-  const [message, setMessage] = useState("");
+  const [confirmation, setConfirmation] = useState<{
+    title: string;
+    artist: string;
+  } | null>(null);
   const music = requests.filter((r) => r.service === "music");
   const mine = music
     .filter((r) => r.guestRef === session.guestRef)
@@ -57,28 +61,35 @@ export function MusicRequests() {
     mine.some((r) => r.meta.Track === song.title && !isTerminal(r.status));
   function submit() {
     if (!selected || blocked || taken(selected)) return;
-    createRequest({
-      service: "music",
-      title: `Song request — ${selected.title}`,
-      description: `Requested from ${location.label} at ${PERFORMER.venue}.`,
-      guestNote: dedication.trim() || undefined,
-      votes: 1,
-      meta: {
-        Track: selected.title,
-        Artist: selected.artist,
-        Genre: selected.genre,
-        Dedication: dedication.trim() ? "Yes" : "No",
+    createRequest(
+      {
+        service: "music",
+        title: `Song request — ${selected.title}`,
+        description: `Requested from ${location.label} at ${PERFORMER.venue}.`,
+        guestNote: dedication.trim() || undefined,
+        votes: 1,
+        meta: {
+          Track: selected.title,
+          Artist: selected.artist,
+          Genre: selected.genre,
+          Dedication: dedication.trim() ? "Yes" : "No",
+        },
       },
-    });
-    setMessage(
-      `${selected.title} sent to the band. Follow its status in My requests.`,
+      { silent: true },
     );
+    setConfirmation({ title: selected.title, artist: selected.artist });
     setSelected(null);
     setDedication("");
     setView("mine");
   }
   return (
     <main className="music-page music-centered">
+      {confirmation ? (
+        <SongRequestConfirmation
+          song={confirmation}
+          onClose={() => setConfirmation(null)}
+        />
+      ) : null}
       <header className="music-page-heading">
         <div>
           <p className="music-kicker">TAJ SANTACRUZ · LIVE EXPERIENCES</p>
@@ -136,14 +147,6 @@ export function MusicRequests() {
                 : "Your request limit is reached. You can request again once one is completed."}
             </p>
           ) : null}
-          <div role="status" aria-live="polite">
-            {message ? (
-              <p className="music-notice">
-                <Check size={18} />
-                {message}
-              </p>
-            ) : null}
-          </div>
           {view === "search" ? (
             <>
               <div className="music-section-heading">
@@ -251,7 +254,7 @@ export function MusicRequests() {
                       disabled={blocked || taken(song)}
                       onClick={() => {
                         setSelected(song);
-                        setMessage("");
+
                         setDedication("");
                       }}
                     >

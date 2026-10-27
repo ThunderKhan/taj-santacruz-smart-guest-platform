@@ -729,7 +729,7 @@ export interface RequestsApi {
   notifications: AppNotification[];
   toasts: Toast[];
   ribbonCollapsed: boolean;
-  createRequest: (input: NewRequestInput) => ServiceRequest;
+  createRequest: (input: NewRequestInput, options?: { silent?: boolean }) => ServiceRequest;
   transition: (
     id: string,
     status: RequestStatus,
@@ -810,7 +810,7 @@ export function RequestsProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const createRequest = useCallback(
-    (input: NewRequestInput): ServiceRequest => {
+    (input: NewRequestInput, options: { silent?: boolean } = {}): ServiceRequest => {
       const now = Date.now();
       const location = findLocation(state.session.locationId);
       const request = buildRequest(input, {
@@ -820,7 +820,7 @@ export function RequestsProvider({ children }: { children: ReactNode }) {
         now,
       });
       dispatch({ type: 'create', request, now });
-      pushToast({
+      if (!options.silent) pushToast({
         tone: 'success',
         title: `Reference ${request.ref} created`,
         body: `Routed to ${request.type}.`,
