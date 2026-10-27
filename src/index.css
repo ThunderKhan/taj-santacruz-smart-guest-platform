@@ -2,33 +2,33 @@
 
 /* ============================================================================
    Design tokens — "Live Music & Celebrations · Smart Guest Platform" concept prototype
-   Palette: midnight navy · warm ivory · champagne gold · muted sage · warm grey
+   Palette: near black · off-white · electric lime · soft olive
    ==========================================================================*/
 @theme {
   /* Ink — midnight navy & charcoal (navigation, headers, staff chrome) */
-  --color-ink-950: #060d15;
-  --color-ink-900: #0b1622;
-  --color-ink-850: #0e1c2b;
-  --color-ink-800: #122337;
-  --color-ink-700: #173049;
-  --color-ink-600: #22405c;
-  --color-ink-500: #33556f;
+  --color-ink-950: #070906;
+  --color-ink-900: #10130e;
+  --color-ink-850: #191d16;
+  --color-ink-800: #252b21;
+  --color-ink-700: #303a29;
+  --color-ink-600: #3d4935;
+  --color-ink-500: #526347;
 
   /* Ivory & cream — guest-facing surfaces */
-  --color-ivory-50: #fcfaf6;
-  --color-ivory-100: #f8f4ec;
-  --color-cream-200: #f1ebe1;
-  --color-cream-300: #e7ded0;
-  --color-sand-400: #d9cdb8;
+  --color-ivory-50: #f5f6f1;
+  --color-ivory-100: #eff2ea;
+  --color-cream-200: #e8ece2;
+  --color-cream-300: #dce2d5;
+  --color-sand-400: #cdd5c5;
 
   /* Champagne gold & brushed brass — restrained accents */
-  --color-gold-200: #efe3c8;
-  --color-gold-300: #e0cda6;
-  --color-gold-400: #d0b584;
-  --color-gold-500: #c2a266;
-  --color-gold-600: #7a5f30;
-  --color-gold-700: #876a37;
-  --color-gold-800: #6f5529; /* gold text on pale gold tints */
+  --color-gold-200: #efffcc;
+  --color-gold-300: #e1ffa0;
+  --color-gold-400: #ceff68;
+  --color-gold-500: #baff32;
+  --color-gold-600: #4c650e;
+  --color-gold-700: #46600b;
+  --color-gold-800: #3e5509; /* gold text on pale gold tints */
 
   /* Sage & forest — successful states */
   --color-sage-300: #a9bfae;
@@ -54,14 +54,19 @@
   --color-clay-600: #8d5438;
 
   /* Typography */
-  --font-sans: "Inter", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
-  --font-display: "Cormorant Garamond", "Cormorant", Georgia, "Times New Roman", serif;
+  --font-sans:
+    "Manrope", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial,
+    sans-serif;
+  --font-display: "Manrope", "Segoe UI", sans-serif;
 
   /* Elevation — deliberately soft and low-contrast */
   --shadow-hairline: 0 1px 2px rgb(11 22 34 / 0.04);
-  --shadow-lift: 0 1px 2px rgb(11 22 34 / 0.05), 0 10px 24px -14px rgb(11 22 34 / 0.18);
-  --shadow-panel: 0 1px 3px rgb(11 22 34 / 0.05), 0 26px 60px -34px rgb(11 22 34 / 0.3);
-  --shadow-pop: 0 2px 6px rgb(11 22 34 / 0.08), 0 20px 46px -22px rgb(11 22 34 / 0.32);
+  --shadow-lift:
+    0 1px 2px rgb(11 22 34 / 0.05), 0 10px 24px -14px rgb(11 22 34 / 0.18);
+  --shadow-panel:
+    0 1px 3px rgb(11 22 34 / 0.05), 0 26px 60px -34px rgb(11 22 34 / 0.3);
+  --shadow-pop:
+    0 2px 6px rgb(11 22 34 / 0.08), 0 20px 46px -22px rgb(11 22 34 / 0.32);
 
   /* Motion */
   --animate-fade-up: fade-up 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
@@ -228,8 +233,8 @@
 
   .display {
     font-family: var(--font-display);
-    font-weight: 400;
-    letter-spacing: -0.01em;
+    font-weight: 750;
+    letter-spacing: -0.045em;
     line-height: 1.06;
   }
 
@@ -314,7 +319,7 @@
   .surface-ink {
     --color-warm-500: #a79e92;
     --color-warm-600: #a79e92;
-    --color-gold-600: #d0b584;
+    --color-gold-600: #ceff68;
   }
 }
 
@@ -331,3 +336,5 @@
     scroll-behavior: auto !important;
   }
 }
+
+@import "./music.css";
