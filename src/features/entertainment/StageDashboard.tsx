@@ -12,7 +12,7 @@ import {
   QrCode,
   Settings,
   Search,
-  ThumbsUp,
+  Heart,
 } from "lucide-react";
 import { useRequests } from "@/store/RequestsProvider";
 import { PERFORMER, DEFAULT_MUSIC_RULES } from "@/data/music";
@@ -20,7 +20,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { relativeTime } from "@/utils/format";
 import type { ServiceRequest } from "@/types";
 
-type Tab = "all" | "new" | "queue" | "history" | "settings" | "qr";
+type Tab = "new" | "queue" | "history" | "settings" | "qr";
 export function StageDashboard() {
   const {
     requests,
@@ -37,7 +37,7 @@ export function StageDashboard() {
       enquiry.assignedMusicianId === session?.musicianId &&
       !isEnquiryTerminal(enquiry.status),
   ).length;
-  const [tab, setTab] = useState<Tab>("all");
+  const [tab, setTab] = useState<Tab>("new");
   const [query, setQuery] = useState("");
   const matches = (r: ServiceRequest) =>
     `${r.meta.Track ?? r.title} ${r.meta.Artist ?? ""} ${r.location}`
@@ -46,10 +46,14 @@ export function StageDashboard() {
   const [copied, setCopied] = useState(false);
   const music = requests.filter((r) => r.service === "music");
   const incoming = music.filter((r) => r.status === "submitted");
-  const accepted = music.filter((r) => r.status === "accepted");
+  // Keep the performance order stable as likes arrive. Include older accepted/held demo requests.
   const queue = music
-    .filter((r) => r.status === "in_progress" && r.stage === "queued")
-    .sort((a, b) => (b.votes ?? 0) - (a.votes ?? 0));
+    .filter(
+      (r) =>
+        r.status === "accepted" ||
+        (r.status === "in_progress" && r.stage === "queued"),
+    )
+    .sort((a, b) => a.updatedAt - b.updatedAt || a.id.localeCompare(b.id));
   const playing = music.find(
     (r) => r.status === "in_progress" && r.stage === "playing",
   );
@@ -65,165 +69,135 @@ export function StageDashboard() {
     });
   }
   const tabs: { id: Tab; label: string; count?: number }[] = [
-    { id: "all", label: "All", count: music.length },
     { id: "new", label: "New", count: incoming.length },
-    { id: "queue", label: "To play", count: accepted.length + queue.length },
+    { id: "queue", label: "Queue", count: queue.length },
     { id: "history", label: "History", count: history.length },
   ];
+  function accept(r: ServiceRequest) {
+    transition(r.id, "in_progress", {
+      by: actor,
+      stage: "queued",
+      note: "Accepted by the band and added to the queue.",
+    });
+  }
+  function start(r: ServiceRequest) {
+    if (playing) return;
+    if (r.status === "accepted")
+      transition(r.id, "in_progress", {
+        by: actor,
+        stage: "playing",
+        note: "Now playing on stage.",
+      });
+    else setStage(r.id, "playing", { note: "Now playing on stage." });
+  }
   function card(r: ServiceRequest, index?: number) {
     const isNew = r.status === "submitted";
-    const isAccepted = r.status === "accepted";
-    const isQueued = r.stage === "queued" && r.status === "in_progress";
+    const isQueued =
+      r.status === "accepted" ||
+      (r.status === "in_progress" && r.stage === "queued");
     return (
-      <article
-        className={`music-request-card ${isNew ? "" : "is-approved"}`}
-        key={r.id}
-      >
-        <div className="music-card-top">
-          <p className="music-kicker">
-            {index !== undefined
-              ? `${String(index + 1).padStart(2, "0")} · `
-              : ""}
-            {r.status === "completed"
-              ? "PLAYED"
-              : r.status === "rejected"
-                ? "DECLINED"
-                : r.status === "cancelled"
-                  ? "CANCELLED"
-                  : r.stage === "deferred"
-                    ? "HELD FOR LATER"
-                    : "SONG REQUEST"}
-          </p>
-          <span className="music-pill">
-            <ThumbsUp size={13} />
-            {r.votes ?? 0} votes · ×
-            {
-              music.filter(
-                (other) =>
-                  other.meta.Track === r.meta.Track &&
-                  !["completed", "rejected", "cancelled"].includes(
-                    other.status,
-                  ),
-              ).length
-            }{" "}
-            requests
+      <article className="music-request-card singer-workflow-row" key={r.id}>
+        <div className="singer-track-heading">
+          {index !== undefined ? (
+            <span className="singer-queue-number">
+              {String(index + 1).padStart(2, "0")}
+            </span>
+          ) : null}
+          <div>
+            <h3>{r.meta.Track ?? r.title}</h3>
+            <p className="music-muted">
+              {r.meta.Artist} · {r.location}
+            </p>
+          </div>
+          <span className="singer-likes" aria-label={`${r.votes ?? 0} hearts`}>
+            <Heart size={14} />
+            {r.votes ?? 0}
           </span>
         </div>
-        <h3>{r.meta.Track ?? r.title}</h3>
-        <p className="music-muted">{r.meta.Artist}</p>
         {r.meta["Preferred play time"] &&
         r.meta["Preferred play time"] !== "Any time" ? (
           <p className="music-preferred-time">
-            <Clock3 size={16} aria-hidden="true" />
+            <Clock3 size={15} />
             Preferred · {r.meta["Preferred play time"]}
             <span>Guest preference</span>
           </p>
         ) : null}
-        {r.guestNote ? (
-          <div className="music-dedication">
-            <p>“{r.guestNote}”</p>
+        {isNew ? (
+          <div className="music-actions singer-quick-actions">
             <button
-              className="music-text-button"
-              onClick={() => setDedicationHidden(r.id, !r.dedicationHidden)}
+              className="music-secondary"
+              aria-label={`Decline ${r.meta.Track ?? r.title}`}
+              onClick={() => reject(r)}
             >
-              {r.dedicationHidden ? "Approve dedication" : "Hold dedication"}
+              Decline
+            </button>
+            <button
+              className="music-primary"
+              aria-label={`Accept ${r.meta.Track ?? r.title} and add to queue`}
+              onClick={() => accept(r)}
+            >
+              <Check size={17} />
+              Accept & queue
             </button>
           </div>
         ) : null}
-        <div className="music-card-meta">
-          <span>
-            {r.location} · {relativeTime(r.submittedAt)}
-          </span>
-          <span>
+        {isQueued ? (
+          <div className="singer-queue-actions">
+            <span className="music-muted">
+              {index === 0 ? "Up next" : "In queue"}
+            </span>
+            <button
+              className={index === 0 ? "music-primary" : "music-secondary"}
+              disabled={Boolean(playing)}
+              title={
+                playing ? "Finish the current song first" : "Start this song"
+              }
+              onClick={() => start(r)}
+            >
+              <Play size={16} />
+              Play now
+            </button>
+          </div>
+        ) : null}
+        {!isNew && !isQueued ? (
+          <p className="singer-history-status">
             {r.status === "completed"
               ? "Played"
               : r.status === "rejected"
                 ? "Declined"
-                : r.status === "cancelled"
-                  ? "Cancelled"
-                  : isNew
-                    ? "Awaiting approval"
-                    : r.stage === "deferred"
-                      ? "Deferred"
-                      : isAccepted
-                        ? "Accepted"
-                        : "Queued"}
-          </span>
-        </div>
-        <div className="music-actions">
-          {isNew ? (
-            <>
-              <button className="music-secondary" onClick={() => reject(r)}>
-                Decline
+                : "Cancelled"}{" "}
+            · {relativeTime(r.updatedAt)}
+          </p>
+        ) : null}
+        {r.guestNote || isQueued ? (
+          <details className="singer-request-details">
+            <summary>
+              {r.guestNote ? "Dedication & options" : "Options"}
+            </summary>
+            {r.guestNote ? (
+              <div className="music-dedication">
+                <p>“{r.guestNote}”</p>
+                {isNew || isQueued ? (
+                  <button
+                    className="music-text-button"
+                    onClick={() =>
+                      setDedicationHidden(r.id, !r.dedicationHidden)
+                    }
+                  >
+                    {r.dedicationHidden
+                      ? "Approve dedication"
+                      : "Hold dedication"}
+                  </button>
+                ) : null}
+              </div>
+            ) : null}
+            {isQueued ? (
+              <button className="music-text-button" onClick={() => reject(r)}>
+                Remove from queue
               </button>
-              <button
-                className="music-primary"
-                onClick={() =>
-                  transition(r.id, "accepted", {
-                    by: actor,
-                    note: "Your song has been accepted by the band.",
-                  })
-                }
-              >
-                <Check size={17} />
-                Accept request
-              </button>
-              <button
-                className="music-text-button"
-                onClick={() =>
-                  transition(r.id, "accepted", {
-                    by: actor,
-                    stage: "deferred",
-                    note: "Held for a later set.",
-                  })
-                }
-              >
-                Hold for later
-              </button>
-            </>
-          ) : null}
-          {isAccepted ? (
-            <>
-              <button className="music-secondary" onClick={() => reject(r)}>
-                Decline
-              </button>
-              <button
-                className="music-primary"
-                onClick={() =>
-                  transition(r.id, "in_progress", {
-                    by: actor,
-                    stage: "queued",
-                    note: "Added to the live queue.",
-                  })
-                }
-              >
-                Add to queue
-              </button>
-            </>
-          ) : null}
-          {isQueued ? (
-            <>
-              <button className="music-secondary" onClick={() => reject(r)}>
-                Remove
-              </button>
-              <button
-                className="music-primary"
-                disabled={Boolean(playing)}
-                title={
-                  playing
-                    ? "Mark the current song played first"
-                    : "Play this song"
-                }
-                onClick={() =>
-                  setStage(r.id, "playing", { note: "Now playing on stage." })
-                }
-              >
-                <Play size={17} />
-                Play now
-              </button>
-            </>
-          ) : null}
-        </div>
+            ) : null}
+          </details>
+        ) : null}
       </article>
     );
   }
@@ -236,8 +210,13 @@ export function StageDashboard() {
           <span className="music-pill">{visible.length}</span>
         </div>
         <div className="music-request-grid">
-          {visible.map((request, index) =>
-            card(request, ranked ? index : undefined),
+          {visible.map((request) =>
+            card(
+              request,
+              ranked
+                ? items.findIndex((item) => item.id === request.id)
+                : undefined,
+            ),
           )}
         </div>
         {!visible.length ? (
@@ -291,7 +270,7 @@ export function StageDashboard() {
             <small>NEW REQUESTS</small>
           </div>
           <div>
-            <strong>{accepted.length + queue.length}</strong>
+            <strong>{queue.length}</strong>
             <small>TO PLAY</small>
           </div>
           <div>
@@ -302,17 +281,31 @@ export function StageDashboard() {
           </div>
         </div>
       </section>
-      {playing ? (
-        <section className="music-onstage">
-          <div>
-            <span className="music-live">
-              <i /> ON STAGE NOW
-            </span>
-            <h2>{playing.meta.Track ?? playing.title}</h2>
-            <p>
-              {playing.meta.Artist} · {playing.location}
-            </p>
-          </div>
+      <section
+        className="music-onstage singer-now-playing"
+        aria-label="Now playing"
+      >
+        <div>
+          <span className="music-live">
+            <i />
+            {playing ? "NOW PLAYING" : "READY FOR THE NEXT SONG"}
+          </span>
+          <h2>
+            {playing
+              ? (playing.meta.Track ?? playing.title)
+              : queue[0]
+                ? (queue[0].meta.Track ?? queue[0].title)
+                : "The stage is clear"}
+          </h2>
+          <p>
+            {playing
+              ? `${playing.meta.Artist ?? ""} · ${playing.location}`
+              : queue.length
+                ? "First in your queue"
+                : "Accept a request below to get started."}
+          </p>
+        </div>
+        {playing ? (
           <button
             className="music-primary"
             onClick={() =>
@@ -326,8 +319,13 @@ export function StageDashboard() {
             <Check size={17} />
             Mark played
           </button>
-        </section>
-      ) : null}
+        ) : queue[0] ? (
+          <button className="music-primary" onClick={() => start(queue[0])}>
+            <Play size={17} />
+            Play next
+          </button>
+        ) : null}
+      </section>
       {tab === "settings" ? (
         <section className="music-settings">
           <p className="music-kicker">YOU’RE IN CONTROL</p>
@@ -439,6 +437,28 @@ export function StageDashboard() {
                 id={`tab-${t.id}`}
                 aria-controls="live-request-panel"
                 aria-selected={tab === t.id}
+                tabIndex={tab === t.id ? 0 : -1}
+                onKeyDown={(event) => {
+                  if (
+                    !["ArrowLeft", "ArrowRight", "Home", "End"].includes(
+                      event.key,
+                    )
+                  )
+                    return;
+                  event.preventDefault();
+                  const current = tabs.findIndex((item) => item.id === t.id);
+                  const next =
+                    event.key === "Home"
+                      ? 0
+                      : event.key === "End"
+                        ? tabs.length - 1
+                        : (current +
+                            (event.key === "ArrowRight" ? 1 : -1) +
+                            tabs.length) %
+                          tabs.length;
+                  setTab(tabs[next].id);
+                  document.getElementById(`tab-${tabs[next].id}`)?.focus();
+                }}
                 onClick={() => setTab(t.id)}
               >
                 <strong>{t.count}</strong>
@@ -452,64 +472,27 @@ export function StageDashboard() {
             aria-labelledby={`tab-${tab}`}
             className="music-activity"
           >
-            <div className="music-section-heading">
-              <h2>
-                {tab === "all"
-                  ? "All song requests"
-                  : tab === "new"
-                    ? "Waiting for approval"
-                    : tab === "queue"
-                      ? "Accepted, still to play"
-                      : "The evening so far"}
-              </h2>
-              <span className="music-muted">
-                {tab === "queue"
-                  ? "Queue ranked by audience votes"
-                  : "Updates automatically"}
-              </span>
-            </div>
-            {tab === "all" ? (
-              <>
-                {partition("New requests", incoming)}
-                {partition(
-                  "Accepted · ready to queue",
-                  accepted.filter((r) => r.stage !== "deferred"),
-                )}
-                {partition(
-                  "Held for later",
-                  accepted.filter((r) => r.stage === "deferred"),
-                )}
-                {partition("Upcoming queue", queue, true)}
-                {partition("History", history)}
-              </>
-            ) : tab === "new" ? (
-              partition("New requests", incoming)
-            ) : tab === "queue" ? (
-              <>
-                {partition(
-                  "Accepted · ready to queue",
-                  accepted.filter((r) => r.stage !== "deferred"),
-                )}
-                {partition(
-                  "Held for later",
-                  accepted.filter((r) => r.stage === "deferred"),
-                )}
-                {partition("Upcoming queue", queue, true)}
-              </>
-            ) : (
-              partition("History", history)
-            )}
+            <p className="singer-workflow-hint">
+              {tab === "new"
+                ? "Accept adds a song straight to your queue. Decline moves it to history."
+                : tab === "queue"
+                  ? "Songs stay in acceptance order. Finish the current song, then play the next."
+                  : "Past requests, kept out of your working queue."}
+            </p>
+            {tab === "new"
+              ? partition("New requests", incoming)
+              : tab === "queue"
+                ? partition("Your queue", queue, true)
+                : partition("History", history)}
           </section>
         </>
       )}
       <nav className="music-console-dock" aria-label="Live music tools">
         <button
           aria-current={
-            ["all", "new", "queue", "history"].includes(tab)
-              ? "page"
-              : undefined
+            ["new", "queue", "history"].includes(tab) ? "page" : undefined
           }
-          onClick={() => setTab("all")}
+          onClick={() => setTab("new")}
         >
           <AudioLines size={18} />
           <span>Console</span>

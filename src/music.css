@@ -1520,3 +1520,71 @@ a[class*="bg-gold-500"] {
   color: var(--apple-accent);
   font-size: 13px;
 }
+
+/* Performer workflow: inbox decisions → stable queue → history. */
+.singer-workflow-row {
+  padding: 20px;
+  background: var(--apple-on-dark);
+}
+.singer-track-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.singer-track-heading > div {
+  flex: 1;
+  min-width: 0;
+}
+.singer-track-heading h3 {
+  margin: 0 0 5px;
+  overflow-wrap: anywhere;
+}
+.singer-likes {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--apple-muted);
+}
+.singer-queue-number {
+  width: 26px;
+  flex-shrink: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--apple-muted);
+}
+.singer-quick-actions {
+  margin-top: 16px;
+}
+.singer-queue-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+}
+.singer-request-details {
+  margin-top: 14px;
+  border-top: 1px solid var(--apple-divider);
+  padding-top: 10px;
+}
+.singer-request-details summary {
+  color: var(--apple-caption);
+  font-size: 12px;
+  cursor: pointer;
+  min-height: 32px;
+  padding: 6px 0;
+}
+.singer-history-status,
+.singer-workflow-hint {
+  color: var(--apple-caption);
+  font-size: 12px;
+  line-height: 1.5;
+  margin-top: 16px;
+}
+.singer-now-playing {
+  border-color: #cce3ff;
+}
+.music-singer-centered .music-song-partition {
+  margin-top: 18px;
+}
