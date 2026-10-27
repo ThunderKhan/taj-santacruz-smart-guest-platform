@@ -48,8 +48,7 @@ export function MusicRequests() {
     (r) => r.status === "in_progress" && r.stage === "playing",
   );
   const played = music.filter((r) => r.status === "completed");
-  const open = mine.filter((r) => !isTerminal(r.status)).length;
-  const blocked = musicRules.paused || open >= musicRules.requestLimit;
+  const blocked = musicRules.paused;
   const results = SONG_CATALOGUE.filter(
     (s) =>
       (category === "all" || s.category === category) &&
@@ -142,9 +141,8 @@ export function MusicRequests() {
           </nav>
           {blocked ? (
             <p className="music-notice">
-              {musicRules.paused
-                ? "The band is taking a break from new requests. You can still browse and vote."
-                : "Your request limit is reached. You can request again once one is completed."}
+              The band is taking a break from new requests. You can still browse
+              and vote.
             </p>
           ) : null}
           {view === "search" ? (
@@ -154,9 +152,7 @@ export function MusicRequests() {
                   <p className="music-kicker">MAKE IT YOUR NIGHT</p>
                   <h2>Request a song</h2>
                 </div>
-                <span className="music-pill">
-                  {Math.max(0, musicRules.requestLimit - open)} requests left
-                </span>
+                <span className="music-pill">Unlimited requests</span>
               </div>
               <p className="music-muted">
                 Choose from tonight’s repertoire. The band decides what plays.

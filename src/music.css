@@ -1157,3 +1157,40 @@ a[class*="bg-gold-500"] {
     animation: none;
   }
 }
+
+/* Singer and guest share the same centered column and song-by-song rhythm. */
+.music-singer-centered {
+  max-width: 790px;
+}
+.music-singer-centered .music-console-summary {
+  grid-template-columns: 1fr;
+  gap: 24px;
+}
+.music-singer-centered .music-summary-stats {
+  justify-content: space-between;
+}
+.music-singer-centered .music-request-grid {
+  grid-template-columns: 1fr;
+}
+.music-singer-centered .music-search {
+  margin-top: 24px;
+}
+.music-song-partition {
+  border-top: 1px solid var(--apple-hairline);
+  margin-top: 28px;
+  padding-top: 4px;
+}
+.music-song-partition .music-request-grid {
+  margin-top: 14px;
+}
+.music-partition-empty {
+  padding: 12px 0 8px;
+}
+.music-singer-centered .music-tabs {
+  gap: 4px;
+}
+@media (max-width: 540px) {
+  .music-singer-centered .music-tabs button {
+    padding: 9px 6px;
+  }
+}

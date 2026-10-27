@@ -6,6 +6,7 @@ import {
   Play,
   QrCode,
   Settings,
+  Search,
   ThumbsUp,
 } from "lucide-react";
 import { useRequests } from "@/store/RequestsProvider";
@@ -14,7 +15,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { relativeTime } from "@/utils/format";
 import type { ServiceRequest } from "@/types";
 
-type Tab = "new" | "queue" | "history" | "settings" | "qr";
+type Tab = "all" | "new" | "queue" | "history" | "settings" | "qr";
 export function StageDashboard() {
   const {
     requests,
@@ -24,7 +25,12 @@ export function StageDashboard() {
     musicRules,
     updateMusicRules,
   } = useRequests();
-  const [tab, setTab] = useState<Tab>("new");
+  const [tab, setTab] = useState<Tab>("all");
+  const [query, setQuery] = useState("");
+  const matches = (r: ServiceRequest) =>
+    `${r.meta.Track ?? r.title} ${r.meta.Artist ?? ""} ${r.location}`
+      .toLowerCase()
+      .includes(query.trim().toLowerCase());
   const [copied, setCopied] = useState(false);
   const music = requests.filter((r) => r.service === "music");
   const incoming = music.filter((r) => r.status === "submitted");
@@ -47,6 +53,7 @@ export function StageDashboard() {
     });
   }
   const tabs: { id: Tab; label: string; count?: number }[] = [
+    { id: "all", label: "All", count: music.length },
     { id: "new", label: "New", count: incoming.length },
     { id: "queue", label: "To play", count: accepted.length + queue.length },
     { id: "history", label: "History", count: history.length },
@@ -65,7 +72,15 @@ export function StageDashboard() {
             {index !== undefined
               ? `${String(index + 1).padStart(2, "0")} · `
               : ""}
-            {r.stage === "deferred" ? "HELD FOR LATER" : "SONG REQUEST"}
+            {r.status === "completed"
+              ? "PLAYED"
+              : r.status === "rejected"
+                ? "DECLINED"
+                : r.status === "cancelled"
+                  ? "CANCELLED"
+                  : r.stage === "deferred"
+                    ? "HELD FOR LATER"
+                    : "SONG REQUEST"}
           </p>
           <span className="music-pill">
             <ThumbsUp size={13} />
@@ -100,13 +115,19 @@ export function StageDashboard() {
             {r.location} · {relativeTime(r.submittedAt)}
           </span>
           <span>
-            {isNew
-              ? "Awaiting approval"
-              : r.stage === "deferred"
-                ? "Deferred"
-                : isAccepted
-                  ? "Accepted"
-                  : "Queued"}
+            {r.status === "completed"
+              ? "Played"
+              : r.status === "rejected"
+                ? "Declined"
+                : r.status === "cancelled"
+                  ? "Cancelled"
+                  : isNew
+                    ? "Awaiting approval"
+                    : r.stage === "deferred"
+                      ? "Deferred"
+                      : isAccepted
+                        ? "Accepted"
+                        : "Queued"}
           </span>
         </div>
         <div className="music-actions">
@@ -186,8 +207,31 @@ export function StageDashboard() {
       </article>
     );
   }
+  function partition(title: string, items: ServiceRequest[], ranked = false) {
+    const visible = items.filter(matches);
+    return (
+      <section className="music-song-partition" aria-label={title}>
+        <div className="music-section-heading">
+          <h3>{title}</h3>
+          <span className="music-pill">{visible.length}</span>
+        </div>
+        <div className="music-request-grid">
+          {visible.map((request, index) =>
+            card(request, ranked ? index : undefined),
+          )}
+        </div>
+        {!visible.length ? (
+          <p className="music-muted music-partition-empty">
+            {query.trim()
+              ? "No matching songs in this section."
+              : "No songs here yet."}
+          </p>
+        ) : null}
+      </section>
+    );
+  }
   return (
-    <main className="music-console">
+    <main className="music-console music-singer-centered">
       <header className="music-page-heading">
         <div>
           <p className="music-kicker">PERFORMER CONSOLE</p>
@@ -300,25 +344,6 @@ export function StageDashboard() {
               <span />
             </button>
           </div>
-          <div className="music-setting-row">
-            <label htmlFor="request-limit">
-              <strong>Requests per guest</strong>
-              <small>Maximum open requests at one time</small>
-            </label>
-            <select
-              id="request-limit"
-              value={musicRules.requestLimit}
-              onChange={(e) =>
-                updateMusicRules({ requestLimit: Number(e.target.value) })
-              }
-            >
-              {[1, 2, 3].map((n) => (
-                <option key={n} value={n}>
-                  {n}
-                </option>
-              ))}
-            </select>
-          </div>
           <button
             className="music-secondary"
             onClick={() => updateMusicRules({ ...DEFAULT_MUSIC_RULES })}
@@ -369,6 +394,15 @@ export function StageDashboard() {
         </section>
       ) : (
         <>
+          <label className="music-search">
+            <Search size={20} />
+            <input
+              aria-label="Search singer requests"
+              placeholder="Search song, artist, or table…"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+            />
+          </label>
           <div
             className="music-tabs"
             role="tablist"
@@ -396,11 +430,13 @@ export function StageDashboard() {
           >
             <div className="music-section-heading">
               <h2>
-                {tab === "new"
-                  ? "Waiting for approval"
-                  : tab === "queue"
-                    ? "Accepted, still to play"
-                    : "The evening so far"}
+                {tab === "all"
+                  ? "All song requests"
+                  : tab === "new"
+                    ? "Waiting for approval"
+                    : tab === "queue"
+                      ? "Accepted, still to play"
+                      : "The evening so far"}
               </h2>
               <span className="music-muted">
                 {tab === "queue"
@@ -408,52 +444,48 @@ export function StageDashboard() {
                   : "Updates automatically"}
               </span>
             </div>
-            <div className="music-request-grid">
-              {tab === "new" ? (
-                incoming.map((r) => card(r))
-              ) : tab === "queue" ? (
-                <>
-                  {accepted.map((r) => card(r))}
-                  {queue.map((r, i) => card(r, i))}
-                </>
-              ) : (
-                history.map((r) => (
-                  <article className="music-request-card" key={r.id}>
-                    <p className="music-kicker">
-                      {r.status === "completed"
-                        ? "PLAYED"
-                        : r.status === "rejected"
-                          ? "DECLINED"
-                          : "CANCELLED"}
-                    </p>
-                    <h3>{r.meta.Track ?? r.title}</h3>
-                    <p className="music-muted">
-                      {r.meta.Artist} · {relativeTime(r.updatedAt)}
-                    </p>
-                  </article>
-                ))
-              )}
-            </div>
-            {(tab === "new" && !incoming.length) ||
-            (tab === "queue" && !accepted.length && !queue.length) ||
-            (tab === "history" && !history.length) ? (
-              <div className="music-empty">
-                <AudioLines size={34} />
-                <h3>
-                  {tab === "new" ? "You’re all caught up" : "Nothing here yet"}
-                </h3>
-                <p>Guest requests and your updates will appear here.</p>
-              </div>
-            ) : null}
+            {tab === "all" ? (
+              <>
+                {partition("New requests", incoming)}
+                {partition(
+                  "Accepted · ready to queue",
+                  accepted.filter((r) => r.stage !== "deferred"),
+                )}
+                {partition(
+                  "Held for later",
+                  accepted.filter((r) => r.stage === "deferred"),
+                )}
+                {partition("Upcoming queue", queue, true)}
+                {partition("History", history)}
+              </>
+            ) : tab === "new" ? (
+              partition("New requests", incoming)
+            ) : tab === "queue" ? (
+              <>
+                {partition(
+                  "Accepted · ready to queue",
+                  accepted.filter((r) => r.stage !== "deferred"),
+                )}
+                {partition(
+                  "Held for later",
+                  accepted.filter((r) => r.stage === "deferred"),
+                )}
+                {partition("Upcoming queue", queue, true)}
+              </>
+            ) : (
+              partition("History", history)
+            )}
           </section>
         </>
       )}
       <nav className="music-console-dock" aria-label="Live music tools">
         <button
           aria-current={
-            ["new", "queue", "history"].includes(tab) ? "page" : undefined
+            ["all", "new", "queue", "history"].includes(tab)
+              ? "page"
+              : undefined
           }
-          onClick={() => setTab("new")}
+          onClick={() => setTab("all")}
         >
           <AudioLines size={18} />
           <span>Console</span>
