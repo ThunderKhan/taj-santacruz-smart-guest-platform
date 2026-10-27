@@ -1,12 +1,15 @@
 import { useState } from "react";
-import { CalendarDays, Users } from "lucide-react";
+import { MusicProgramSettings } from "@/features/program/MusicProgramSettings";
+import { CalendarDays, Users, Clock3 } from "lucide-react";
 import { EventsDashboard } from "@/features/events/EventsDashboard";
 import { MusiciansDashboard } from "@/features/staff/MusiciansDashboard";
 import { ProductFooter } from "@/components/ProductFooter";
 import { useRequests } from "@/store/RequestsProvider";
 import { isEnquiryTerminal } from "@/services/enquiryEngine";
 export function StaffLayout() {
-  const [desk, setDesk] = useState<"events" | "musicians">("events");
+  const [desk, setDesk] = useState<"program" | "events" | "musicians">(
+    "program",
+  );
   const { enquiries, musicians } = useRequests();
   const open = enquiries.filter((e) => !isEnquiryTerminal(e.status)).length;
   return (
@@ -25,6 +28,13 @@ export function StaffLayout() {
         </header>
         <nav className="staff-workspace-tabs" aria-label="Staff tools">
           <button
+            aria-pressed={desk === "program"}
+            onClick={() => setDesk("program")}
+          >
+            <Clock3 size={17} />
+            Music program
+          </button>
+          <button
             aria-pressed={desk === "events"}
             onClick={() => setDesk("events")}
           >
@@ -40,10 +50,22 @@ export function StaffLayout() {
           </button>
         </nav>
         <section
-          className="staff-workspace-panel bg-ink-900 text-cream-200"
-          aria-label={desk === "events" ? "Event enquiries" : "Musicians"}
+          className={`staff-workspace-panel ${desk === "program" ? "staff-program-panel" : "bg-ink-900 text-cream-200"}`}
+          aria-label={
+            desk === "program"
+              ? "Music program"
+              : desk === "events"
+                ? "Event enquiries"
+                : "Musicians"
+          }
         >
-          {desk === "events" ? <EventsDashboard /> : <MusiciansDashboard />}
+          {desk === "program" ? (
+            <MusicProgramSettings />
+          ) : desk === "events" ? (
+            <EventsDashboard />
+          ) : (
+            <MusiciansDashboard />
+          )}
         </section>
       </main>
       <ProductFooter />

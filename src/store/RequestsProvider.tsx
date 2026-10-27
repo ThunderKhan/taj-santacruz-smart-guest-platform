@@ -177,7 +177,8 @@ function readPersisted(now: number): PersistedState {
 
 function saveState(state: PersistedState): void {
   try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    const serialized = JSON.stringify(state);
+    if (window.localStorage.getItem(STORAGE_KEY) !== serialized) window.localStorage.setItem(STORAGE_KEY, serialized);
   } catch {
     // Storage may be unavailable (private mode). The prototype still works in memory.
   }
@@ -194,6 +195,7 @@ interface AssignOptions {
 }
 
 type Action =
+  | { type: 'hydrate'; state: PersistedState }
   | { type: 'create'; request: ServiceRequest; now: number }
   | { type: 'transition'; id: string; status: RequestStatus; options: TransitionOptions; now: number }
   /** Stage-only update within an open request (e.g. queued → playing). */
@@ -313,6 +315,7 @@ function enquiryGuestNotification(
 
 function reducer(state: PersistedState, action: Action): PersistedState {
   switch (action.type) {
+    case 'hydrate': return action.state;
     case 'create': {
       const request = action.request;
       const body = `${request.title} · ${request.location}`;
@@ -790,6 +793,19 @@ export function RequestsProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     saveState(state);
   }, [state]);
+
+  // Share requests between same-origin demo tabs without echoing identical writes.
+  useEffect(() => {
+    const sync = (event: StorageEvent) => {
+      if (event.key !== STORAGE_KEY || !event.newValue) return;
+      try {
+        const incoming = JSON.parse(event.newValue) as PersistedState;
+        if (incoming.version === STATE_VERSION && Array.isArray(incoming.requests) && Array.isArray(incoming.enquiries) && Array.isArray(incoming.musicians)) dispatch({ type: 'hydrate', state: incoming });
+      } catch { /* Ignore corrupt external storage updates. */ }
+    };
+    window.addEventListener('storage', sync);
+    return () => window.removeEventListener('storage', sync);
+  }, []);
 
   /* Gentle pulse so elapsed times and relative stamps stay honest. */
   useEffect(() => {

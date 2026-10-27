@@ -37,6 +37,9 @@ export function SongRequestRow({ request }: { request: ServiceRequest }) {
         <strong>{request.meta.Track ?? request.title}</strong>
         <small>
           {request.meta.Artist}
+          {request.meta["Advance request"] === "Yes"
+            ? ` · ${request.meta["Experience"]} · ${request.meta["Session date"]}`
+            : ""}
           {preferred && preferred !== "Any time"
             ? ` · Preferred: ${preferred}`
             : ""}

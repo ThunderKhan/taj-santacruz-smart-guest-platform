@@ -1964,3 +1964,217 @@ a[class*="bg-gold-500"] {
     font-size: 10px;
   }
 }
+
+/* Daily music program and explicit demo previews share the existing Apple surfaces. */
+.program-controls {
+  margin: 0 0 24px;
+}
+.program-session-label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--apple-caption);
+}
+.program-session-label > span {
+  margin-left: auto;
+  color: var(--apple-accent);
+  font-size: 11px;
+}
+.program-preview,
+.program-advance {
+  border: 1px solid var(--apple-hairline);
+  background: var(--apple-parchment);
+  border-radius: 16px;
+  margin-top: 12px;
+  padding: 0 16px;
+}
+.program-preview summary,
+.program-advance summary {
+  cursor: pointer;
+  min-height: 44px;
+  padding: 13px 0;
+  font-size: 12px;
+  color: var(--apple-caption);
+}
+.program-preview summary svg,
+.program-advance summary svg {
+  display: inline-block;
+  vertical-align: -3px;
+  margin-right: 6px;
+}
+.program-preview summary span {
+  margin-left: 8px;
+  font-size: 10px;
+  color: var(--apple-muted);
+}
+.program-preview p,
+.program-advance p {
+  font-size: 12px;
+  color: var(--apple-caption);
+  padding-bottom: 12px;
+}
+.program-choice-group {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding-bottom: 12px;
+}
+.program-choice-group button {
+  min-height: 44px;
+  padding: 9px 13px;
+  border-radius: 999px;
+  background: white;
+  border: 1px solid var(--apple-hairline);
+  font-size: 12px;
+  color: var(--apple-caption);
+}
+.program-choice-group button[aria-pressed="true"] {
+  color: var(--apple-accent);
+  border-color: var(--apple-accent);
+  background: #edf5ff;
+}
+.program-booking-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 16px;
+  margin-top: 12px;
+  border: 1px solid #cce3ff;
+  background: #edf5ff;
+  border-radius: 16px;
+  font-size: 13px;
+}
+.program-booking-banner small {
+  display: block;
+  font-size: 11px;
+  color: var(--apple-caption);
+  margin-top: 4px;
+}
+.program-advance > .music-secondary {
+  margin-bottom: 16px;
+}
+.program-management {
+  padding: 28px;
+  background: var(--apple-parchment);
+  color: var(--apple-ink);
+}
+.program-management h2 {
+  font-size: clamp(24px, 3vw, 32px);
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  margin: 8px 0;
+}
+.program-management h3 {
+  font-size: 19px;
+  font-weight: 600;
+}
+.program-management header > p:last-child,
+.program-helper {
+  font-size: 12px;
+  color: var(--apple-caption);
+  line-height: 1.5;
+  margin: 10px 0 16px;
+}
+.program-settings-card {
+  background: white;
+  border: 1px solid var(--apple-hairline);
+  border-radius: 18px;
+  padding: 24px;
+  margin-top: 20px;
+}
+.program-settings-card .music-section-heading {
+  margin-top: 0;
+}
+.program-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin: 16px 0;
+}
+.program-form-grid label,
+.program-override-label,
+.program-console-date label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.program-form-grid input,
+.program-form-grid select,
+.program-override-label select,
+.program-console-date input {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  border: 1px solid var(--apple-hairline);
+  background: var(--apple-parchment);
+  border-radius: 10px;
+  padding: 10px 12px;
+  color: var(--apple-ink);
+  font-size: 14px;
+  font-weight: 400;
+  color-scheme: light;
+}
+.program-full-field {
+  grid-column: 1/-1;
+}
+.program-save-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 20px;
+}
+.program-save-row p {
+  font-size: 12px;
+  width: 100%;
+}
+.program-controls button:focus-visible,
+.program-management :is(input, select, button):focus-visible,
+.program-console-selector :is(input, button):focus-visible {
+  outline: 2px solid var(--apple-focus);
+  outline-offset: 3px;
+}
+.program-console-selector {
+  background: var(--apple-parchment);
+  border-radius: 18px;
+  padding: 16px;
+  margin-bottom: 24px;
+}
+.program-console-date {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.program-console-date label {
+  width: 165px;
+}
+.program-console-date > span {
+  padding-bottom: 12px;
+  font-size: 11px;
+}
+.staff-workspace-tabs {
+  flex-wrap: wrap;
+}
+.program-receipt-context {
+  font-size: 12px !important;
+}
+@media (max-width: 640px) {
+  .program-management {
+    padding: 14px;
+  }
+  .program-settings-card {
+    padding: 18px;
+  }
+  .program-form-grid {
+    grid-template-columns: 1fr;
+  }
+  .program-session-label > span {
+    margin-left: 0;
+  }
+}

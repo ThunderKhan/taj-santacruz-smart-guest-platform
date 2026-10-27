@@ -5,7 +5,7 @@ const destinations = [
   { to: "/", label: "Requests", Icon: Music2, end: true },
   {
     to: "/musician/live",
-    label: "Singer console",
+    label: "Music console",
     Icon: AudioLines,
     end: false,
   },

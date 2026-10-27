@@ -1,4 +1,19 @@
-import { useEffect, useRef, useState } from "react";
+import { useMusicProgram } from "@/features/program/MusicProgramProvider";
+import {
+  GuestProgramControls,
+  type BookingTarget,
+} from "@/features/program/GuestProgramControls";
+import {
+  sessionMatches,
+  modeAt,
+  sessionDateTime,
+  timeInSession,
+  quickTimes,
+  localDate,
+  sessionStart,
+  type MusicMode,
+} from "@/features/program/musicProgram";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { SongRequestConfirmation } from "./SongRequestConfirmation";
 import {
   AudioLines,
@@ -12,16 +27,45 @@ import {
 import { useRequests } from "@/store/RequestsProvider";
 import { LocationControl } from "@/components/LocationSwitcher";
 import { SongRequestRow, SongRequestStatus } from "./SongRequestRow";
-import {
-  PERFORMER,
-  NOW_PLAYING,
-  SONG_CATALOGUE,
-  SONG_CATEGORIES,
-} from "@/data/music";
+import { NOW_PLAYING, SONG_CATALOGUE, SONG_CATEGORIES } from "@/data/music";
 import { isTerminal } from "@/services/requestEngine";
 import type { Song, SongCategory } from "@/types";
 
 export function MusicRequests() {
+  const { program, mode, date, now } = useMusicProgram();
+  const [booking, setBooking] = useState<BookingTarget | null>(null);
+  const validBooking =
+    booking &&
+    program.experiences[booking.mode].advanceEnabled &&
+    program.experiences[booking.mode].requestsEnabled &&
+    sessionDateTime(booking.mode, booking.date, program) > now
+      ? booking
+      : null;
+  return (
+    <MusicExperience
+      key={`${validBooking?.mode ?? mode}:${validBooking?.date ?? date}:${Boolean(validBooking)}`}
+      mode={validBooking?.mode ?? mode}
+      sessionDate={validBooking?.date ?? date}
+      advance={Boolean(validBooking)}
+      controls={
+        <GuestProgramControls booking={validBooking} onBooking={setBooking} />
+      }
+    />
+  );
+}
+function MusicExperience({
+  mode,
+  sessionDate,
+  advance,
+  controls,
+}: {
+  mode: MusicMode;
+  sessionDate: string;
+  advance: boolean;
+  controls: ReactNode;
+}) {
+  const { program, now, preview, refreshClock } = useMusicProgram();
+  const experience = program.experiences[mode];
   const { requests, session, location, createRequest, toggleVote, musicRules } =
     useRequests();
   const [view, setView] = useState<"search" | "mine" | "queue">("search");
@@ -47,8 +91,17 @@ export function MusicRequests() {
     title: string;
     artist: string;
     preferredTime: string;
+    experience: string;
+    sessionDate: string;
   } | null>(null);
-  const music = requests.filter((r) => r.service === "music");
+  const music = requests.filter((r) =>
+    sessionMatches(
+      r,
+      mode,
+      sessionDate,
+      advance ? localDate(sessionStart(mode, now, program)) : sessionDate,
+    ),
+  );
   const mine = music
     .filter((r) => r.guestRef === session.guestRef)
     .sort((a, b) => b.updatedAt - a.updatedAt);
@@ -59,7 +112,9 @@ export function MusicRequests() {
     (r) => r.status === "in_progress" && r.stage === "playing",
   );
   const played = music.filter((r) => r.status === "completed");
-  const blocked = musicRules.paused;
+  const blocked =
+    !experience.requestsEnabled || (mode === "singer" && musicRules.paused);
+  const votingEnabled = mode !== "singer" || musicRules.votingEnabled;
   const results = SONG_CATALOGUE.filter(
     (s) =>
       (category === "all" || s.category === category) &&
@@ -71,16 +126,40 @@ export function MusicRequests() {
     mine.some((r) => r.meta.Track === song.title && !isTerminal(r.status));
   function submit() {
     if (!selected || blocked || taken(selected)) return;
-    if (!timeLabel) {
+    if (!advance && preview === "auto") {
+      const current = new Date();
+      const active =
+        program.override === "auto"
+          ? modeAt(current, program)
+          : program.override;
+      const activeDate =
+        program.override === "auto"
+          ? localDate(sessionStart(active, current, program))
+          : localDate(current);
+      if (active !== mode || activeDate !== sessionDate) {
+        refreshClock();
+        return;
+      }
+    }
+    if (
+      !timeLabel ||
+      (requestedTime !== "any" && !timeInSession(requestedTime, mode, program))
+    ) {
       setTimeError(true);
       document.getElementById("preferred-play-time")?.focus();
       return;
     }
+    if (
+      advance &&
+      (!experience.advanceEnabled ||
+        sessionDateTime(mode, sessionDate, program) <= new Date())
+    )
+      return;
     createRequest(
       {
         service: "music",
         title: `Song request — ${selected.title}`,
-        description: `Requested from ${location.label} at ${PERFORMER.venue}.`,
+        description: `Requested from ${location.label} at ${experience.venue}.`,
         guestNote: dedication.trim() || undefined,
         votes: 1,
         meta: {
@@ -89,6 +168,10 @@ export function MusicRequests() {
           Genre: selected.genre,
           Dedication: dedication.trim() ? "Yes" : "No",
           "Preferred play time": timeLabel,
+          "Music mode": mode,
+          "Session date": sessionDate,
+          Experience: experience.title,
+          "Advance request": advance ? "Yes" : "No",
         },
       },
       { silent: true },
@@ -97,6 +180,8 @@ export function MusicRequests() {
       title: selected.title,
       artist: selected.artist,
       preferredTime: timeLabel,
+      experience: experience.title,
+      sessionDate: advance ? sessionDate : "",
     });
     setSelected(null);
     setDedication("");
@@ -122,31 +207,61 @@ export function MusicRequests() {
       <header className="music-page-heading">
         <div>
           <p className="music-kicker">TAJ SANTACRUZ · LIVE EXPERIENCES</p>
-          <h1>Your evening. Your soundtrack.</h1>
-          <p>A little request. A memorable night.</p>
+          <h1>
+            {mode === "singer"
+              ? "Your evening. Your soundtrack."
+              : mode === "dj"
+                ? "Your night. Your mix."
+                : "Your lobby. Your soundtrack."}
+          </h1>
+          <p>{experience.description}</p>
         </div>
         <LocationControl />
       </header>
+      {controls}
       <div className="music-guest-grid">
         <div className="music-guest-main">
           <section className="music-hero">
             <div className="music-hero-copy">
               <span className="music-live">
-                <i /> LIVE AT THE LOBBY LOUNGE
+                <i />{" "}
+                {advance
+                  ? "ADVANCE REQUEST"
+                  : mode === "singer"
+                    ? "LIVE PERFORMANCE"
+                    : mode === "dj"
+                      ? "DJ SESSION"
+                      : "LOBBY MUSIC"}{" "}
+                · {experience.venue}
               </span>
-              <h2>{playing?.meta.Track ?? NOW_PLAYING.title}</h2>
-              <p>{playing?.meta.Artist ?? NOW_PLAYING.artist}</p>
+              <h2>
+                {playing?.meta.Track ??
+                  (mode === "singer" ? NOW_PLAYING.title : experience.title)}
+              </h2>
+              <p>{playing?.meta.Artist ?? experience.performer}</p>
               <div className="music-hero-footer">
                 <AudioLines size={26} />
                 <span>
-                  {PERFORMER.name}
-                  <small>Tonight’s resident ensemble</small>
+                  {experience.performer}
+                  <small>
+                    {mode === "singer"
+                      ? "Resident ensemble"
+                      : mode === "dj"
+                        ? "After-hours selections"
+                        : "Curated lobby favourites"}
+                  </small>
                 </span>
               </div>
             </div>
             <img
-              src="/images/music-stage.jpg"
-              alt="Live music stage at the lounge"
+              src={
+                mode === "singer"
+                  ? "/images/music-stage.jpg"
+                  : mode === "dj"
+                    ? "/images/music-crowd.jpg"
+                    : "/images/music-venue.jpg"
+              }
+              alt={experience.title}
             />
           </section>
           <nav
@@ -206,8 +321,8 @@ export function MusicRequests() {
           </nav>
           {blocked ? (
             <p className="music-notice">
-              The band is taking a break from new requests. You can still browse
-              and vote.
+              Requests are currently paused for this experience. You can still
+              browse your requests.
             </p>
           ) : null}
           <div
@@ -226,7 +341,8 @@ export function MusicRequests() {
                   <span className="music-pill">Unlimited requests</span>
                 </div>
                 <p className="music-muted">
-                  Choose from tonight’s repertoire. The band decides what plays.
+                  Choose a song for {experience.title}. The music team decides
+                  what plays.
                 </p>
                 <label className="music-search">
                   <Search size={20} />
@@ -276,15 +392,19 @@ export function MusicRequests() {
                         When would you like to hear it? <span>(optional)</span>
                       </legend>
                       <p id="play-time-help">
-                        Choose a preferred time for this evening. The band will
-                        do its best to fit it into the set.
+                        Choose a preferred time within this session. The music
+                        team will do its best to fit it in.
                       </p>
                       <div className="music-time-options">
                         {[
                           { value: "any", label: "Any time" },
-                          { value: "21:30", label: "9:30 PM" },
-                          { value: "22:00", label: "10:00 PM" },
-                          { value: "23:00", label: "11:00 PM" },
+                          ...quickTimes(
+                            mode,
+                            sessionDate,
+                            now,
+                            program,
+                            preview !== "auto",
+                          ),
                         ].map((option) => (
                           <button
                             type="button"
@@ -336,7 +456,8 @@ export function MusicRequests() {
                           />
                           {timeError ? (
                             <p id="play-time-error" role="alert">
-                              Choose a time, or select Any time.
+                              Choose a time within this session, or select Any
+                              time.
                             </p>
                           ) : null}
                         </div>
@@ -359,7 +480,7 @@ export function MusicRequests() {
                     />
                     <small id="dedication-help" className="music-muted">
                       {dedication.length}/180 · Dedications are reviewed by the
-                      band.
+                      music team.
                     </small>
                     <div className="music-actions">
                       <button
@@ -494,7 +615,7 @@ export function MusicRequests() {
                           className="music-vote music-heart"
                           aria-label={`${r.guestVoted ? "Unlike" : "Like"} ${r.meta.Track ?? r.title}`}
                           aria-pressed={Boolean(r.guestVoted)}
-                          disabled={!musicRules.votingEnabled}
+                          disabled={!votingEnabled}
                           onClick={() => toggleVote(r.id)}
                         >
                           <Heart
@@ -512,15 +633,15 @@ export function MusicRequests() {
                       The next great request could be yours.
                     </p>
                   ) : null}
-                  {!musicRules.votingEnabled ? (
+                  {!votingEnabled ? (
                     <p className="music-notice">
                       Song likes are paused for this set.
                     </p>
                   ) : null}
                   <p className="music-fineprint">
                     <Check size={15} />
-                    Hearts show what the room loves. The band curates the
-                    evening.
+                    Hearts show what the room loves. The music team curates the
+                    session.
                   </p>
                 </section>
                 <section className="music-history">

@@ -1,3 +1,13 @@
+import { useMusicProgram } from "@/features/program/MusicProgramProvider";
+import {
+  MUSIC_MODES,
+  localDate,
+  sessionStart,
+  sessionDateTime,
+  sessionMatches,
+  modeWindow,
+  type MusicMode,
+} from "@/features/program/musicProgram";
 import { useState } from "react";
 import { MusicianEvents } from "@/features/musician/MusicianEvents";
 import { useAuth } from "@/store/AuthProvider";
@@ -15,13 +25,27 @@ import {
   Heart,
 } from "lucide-react";
 import { useRequests } from "@/store/RequestsProvider";
-import { PERFORMER, DEFAULT_MUSIC_RULES } from "@/data/music";
+import { DEFAULT_MUSIC_RULES } from "@/data/music";
 import { QRCodeSVG } from "qrcode.react";
 import { relativeTime } from "@/utils/format";
 import type { ServiceRequest } from "@/types";
 
 type Tab = "new" | "queue" | "history" | "settings" | "qr" | "events";
 export function StageDashboard() {
+  const { program, now, mode, date, saveProgram } = useMusicProgram();
+  const [workspaceMode, setWorkspaceMode] = useState<MusicMode | "auto">(
+    "auto",
+  );
+  const currentMode = workspaceMode === "auto" ? mode : workspaceMode;
+  const [chosenDate, setChosenDate] = useState("");
+  const sessionDate =
+    chosenDate ||
+    (workspaceMode === "auto"
+      ? date
+      : localDate(sessionStart(currentMode, now, program)));
+  const experience = program.experiences[currentMode];
+  const sessionLive = currentMode === mode && sessionDate === date;
+
   const {
     requests,
     enquiries,
@@ -31,6 +55,24 @@ export function StageDashboard() {
     musicRules,
     updateMusicRules,
   } = useRequests();
+  const requestsPaused =
+    !experience.requestsEnabled ||
+    (currentMode === "singer" && musicRules.paused);
+  function toggleRequests() {
+    if (currentMode === "singer")
+      updateMusicRules({ paused: !musicRules.paused });
+    else
+      saveProgram({
+        ...program,
+        experiences: {
+          ...program.experiences,
+          [currentMode]: {
+            ...experience,
+            requestsEnabled: !experience.requestsEnabled,
+          },
+        },
+      });
+  }
   const { session } = useAuth();
   const myEventsCount = enquiries.filter(
     (enquiry) =>
@@ -44,7 +86,24 @@ export function StageDashboard() {
       .toLowerCase()
       .includes(query.trim().toLowerCase());
   const [copied, setCopied] = useState(false);
-  const music = requests.filter((r) => r.service === "music");
+  const music = requests.filter((r) =>
+    sessionMatches(
+      r,
+      currentMode,
+      sessionDate,
+      currentMode === mode
+        ? date
+        : localDate(sessionStart(currentMode, now, program)),
+    ),
+  );
+  const futureRequests = requests.filter(
+    (r) =>
+      r.service === "music" &&
+      r.meta["Music mode"] === currentMode &&
+      Boolean(r.meta["Session date"]) &&
+      sessionDateTime(currentMode, r.meta["Session date"], program) > now &&
+      !["completed", "rejected", "cancelled"].includes(r.status),
+  );
   const incoming = music.filter((r) => r.status === "submitted");
   // Keep the performance order stable as likes arrive. Include older accepted/held demo requests.
   const queue = music
@@ -98,11 +157,11 @@ export function StageDashboard() {
     transition(r.id, "in_progress", {
       by: actor,
       stage: "queued",
-      note: "Accepted by the band and added to the queue.",
+      note: "Accepted by the music team and added to the queue.",
     });
   }
   function start(r: ServiceRequest) {
-    if (playing) return;
+    if (playing || !sessionLive) return;
     if (r.status === "accepted")
       transition(r.id, "in_progress", {
         by: actor,
@@ -117,7 +176,11 @@ export function StageDashboard() {
       r.status === "accepted" ||
       (r.status === "in_progress" && r.stage === "queued");
     return (
-      <article className="music-request-card singer-workflow-row" key={r.id}>
+      <article
+        className="music-request-card singer-workflow-row"
+        data-request-id={r.id}
+        key={r.id}
+      >
         <div className="singer-track-heading">
           {index !== undefined ? (
             <span className="singer-queue-number">
@@ -173,7 +236,7 @@ export function StageDashboard() {
             </span>
             <button
               className={index === 0 ? "music-primary" : "music-secondary"}
-              disabled={Boolean(playing)}
+              disabled={Boolean(playing) || !sessionLive}
               title={
                 playing ? "Finish the current song first" : "Start this song"
               }
@@ -273,17 +336,78 @@ export function StageDashboard() {
                   : "Live activity"}
           </h1>
           <p>
-            {PERFORMER.venue} · {PERFORMER.name}
+            {experience.venue} · {experience.performer}
           </p>
         </div>
         <span className="music-pill">
-          <i className={`music-dot ${musicRules.paused ? "is-paused" : ""}`} />
-          {musicRules.paused ? "Requests paused" : "Live session"}
+          <i className={`music-dot ${requestsPaused ? "is-paused" : ""}`} />
+          {requestsPaused ? "Requests paused" : "Live session"}
         </span>
       </header>
+      <section
+        className="program-console-selector"
+        aria-label="Music workspace"
+      >
+        <div className="program-choice-group">
+          {(["auto", ...MUSIC_MODES] as const).map((m) => (
+            <button
+              key={m}
+              aria-pressed={workspaceMode === m}
+              onClick={() => {
+                setWorkspaceMode(m);
+                setChosenDate("");
+                setQuery("");
+                setTab("new");
+              }}
+            >
+              {m === "auto"
+                ? "Current experience"
+                : program.experiences[m].title}
+            </button>
+          ))}
+        </div>
+        <div className="program-console-date">
+          <label>
+            Session date
+            <input
+              type="date"
+              value={sessionDate}
+              onChange={(e) => {
+                setChosenDate(e.target.value);
+                setQuery("");
+              }}
+            />
+          </label>
+          <span className="music-muted">
+            {sessionLive
+              ? "Active session"
+              : "Scheduled / past session · playback unavailable"}
+          </span>
+          {futureRequests.length ? (
+            <button
+              className="music-text-button"
+              onClick={() => {
+                setChosenDate(
+                  [...futureRequests].sort((a, b) =>
+                    a.meta["Session date"].localeCompare(
+                      b.meta["Session date"],
+                    ),
+                  )[0].meta["Session date"],
+                );
+                setTab("new");
+              }}
+            >
+              Advance requests ({futureRequests.length})
+            </button>
+          ) : null}
+        </div>
+      </section>
       <section className="music-console-summary">
         <div>
-          <p className="music-kicker">TONIGHT AT THE LOBBY LOUNGE</p>
+          <p className="music-kicker">
+            {experience.title.toUpperCase()} ·{" "}
+            {modeWindow(currentMode, program)}
+          </p>
           <h2>
             Let the room
             <br />
@@ -355,7 +479,7 @@ export function StageDashboard() {
             <Check size={17} />
             Mark played
           </button>
-        ) : queue[0] ? (
+        ) : queue[0] && sessionLive ? (
           <button className="music-primary" onClick={() => start(queue[0])}>
             <Play size={17} />
             Play next
@@ -380,7 +504,7 @@ export function StageDashboard() {
             <div>
               <strong>Song requests</strong>
               <small>
-                {musicRules.paused
+                {requestsPaused
                   ? "Closed for new requests"
                   : "Open to guests · free"}
               </small>
@@ -389,8 +513,9 @@ export function StageDashboard() {
               className="music-switch"
               role="switch"
               aria-label="Allow song requests"
-              aria-checked={!musicRules.paused}
-              onClick={() => updateMusicRules({ paused: !musicRules.paused })}
+              aria-checked={!requestsPaused}
+              onClick={toggleRequests}
+              disabled={currentMode === "singer" && !experience.requestsEnabled}
             >
               <span />
             </button>
@@ -560,13 +685,14 @@ export function StageDashboard() {
         </button>
         <button
           aria-label={
-            musicRules.paused ? "Resume song requests" : "Pause song requests"
+            requestsPaused ? "Resume song requests" : "Pause song requests"
           }
-          aria-pressed={musicRules.paused}
-          onClick={() => updateMusicRules({ paused: !musicRules.paused })}
+          aria-pressed={requestsPaused}
+          onClick={toggleRequests}
+          disabled={currentMode === "singer" && !experience.requestsEnabled}
         >
-          {musicRules.paused ? <Play size={18} /> : <Pause size={18} />}
-          <span>{musicRules.paused ? "Resume" : "Pause"}</span>
+          {requestsPaused ? <Play size={18} /> : <Pause size={18} />}
+          <span>{requestsPaused ? "Resume" : "Pause"}</span>
         </button>
       </nav>
     </main>
