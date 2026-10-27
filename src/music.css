@@ -1412,3 +1412,35 @@ a[class*="bg-gold-500"] {
     flex-wrap: wrap;
   }
 }
+
+/* Pink glass reactions, with an explicit filled state and the existing vote count. */
+.music-vote.music-heart {
+  color: #c52a72;
+  background: rgb(255 240 248 / 65%);
+  border: 1px solid rgb(211 83 144 / 24%);
+  -webkit-backdrop-filter: saturate(180%) blur(16px);
+  backdrop-filter: saturate(180%) blur(16px);
+  min-height: 44px;
+  min-width: 58px;
+  transition: background-color .18s ease, border-color .18s ease;
+}
+.music-vote.music-heart[aria-pressed="true"] {
+  color: #ba1b63;
+  background: rgb(255 214 235 / 72%);
+  border-color: rgb(207 48 119 / 40%);
+}
+.music-heart[aria-pressed="true"] svg { animation: heart-like .25s ease-out; }
+.music-vote.music-heart:focus-visible { outline-color: #c52a72; }
+@keyframes heart-like { 0% { transform: scale(.8); } 55% { transform: scale(1.18); } 100% { transform: scale(1); } }
+@supports not ((backdrop-filter: blur(16px)) or (-webkit-backdrop-filter: blur(16px))) {
+  .music-vote.music-heart { background: #fff0f8; }
+  .music-vote.music-heart[aria-pressed="true"] { background: #ffd6eb; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .music-vote.music-heart { background: #fff0f8; -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .music-vote.music-heart[aria-pressed="true"] { background: #ffd6eb; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .music-vote.music-heart { transition: none; }
+  .music-heart[aria-pressed="true"] svg { animation: none; }
+}

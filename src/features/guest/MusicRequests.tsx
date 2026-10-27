@@ -8,7 +8,6 @@ import {
   Clock3,
   Plus,
   Search,
-  ThumbsUp,
 } from "lucide-react";
 import { useRequests } from "@/store/RequestsProvider";
 import { LocationControl } from "@/components/LocationSwitcher";
@@ -390,7 +389,7 @@ export function MusicRequests() {
                   </span>
                 </div>
                 <p className="music-muted">
-                  Tap to upvote an approved song you’d love to hear.
+                  Tap the heart on a song you’d love to hear.
                 </p>
                 <ol className="music-vote-list">
                   {queue.map((r, i) => (
@@ -419,13 +418,13 @@ export function MusicRequests() {
                         </small>
                       </div>
                       <button
-                        className="music-vote"
-                        aria-label={`Vote for ${r.meta.Track}`}
+                        className="music-vote music-heart"
+                        aria-label={`${r.guestVoted ? "Unlike" : "Like"} ${r.meta.Track ?? r.title}`}
                         aria-pressed={Boolean(r.guestVoted)}
                         disabled={!musicRules.votingEnabled}
                         onClick={() => toggleVote(r.id)}
                       >
-                        <ThumbsUp size={16} />
+                        <Heart size={19} fill={r.guestVoted ? "currentColor" : "none"} aria-hidden="true" />
                         {r.votes ?? 0}
                       </button>
                     </li>
@@ -438,12 +437,12 @@ export function MusicRequests() {
                 ) : null}
                 {!musicRules.votingEnabled ? (
                   <p className="music-notice">
-                    Audience voting is paused for this set.
+                    Song likes are paused for this set.
                   </p>
                 ) : null}
                 <p className="music-fineprint">
                   <Check size={15} />
-                  Votes show demand. The band curates the evening.
+                  Hearts show what the room loves. The band curates the evening.
                 </p>
               </section>
               <section className="music-history">
