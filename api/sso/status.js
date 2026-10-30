@@ -1,4 +1,4 @@
-import {getConfig,respond} from '../_lib/vsph.js';
+import {getConfig,respond} from '../../server/vsph.js';
 export default function handler(req,res){
   if(req.method!=='GET')return respond(res,405,{message:'Method not allowed'});
   try{
