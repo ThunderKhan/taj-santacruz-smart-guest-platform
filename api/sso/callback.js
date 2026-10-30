@@ -22,7 +22,7 @@ export default async function handler(req,res){
        organization.id!==tx.organization||app?.code!=='MUSIC'||
        typeof result.portal_session_ref!=='string'||!/^[0-9a-f]{64}$/.test(result.portal_session_ref))
       return respond(res,401,{message:'Invalid identity response'});
-    const mapped=roleMapping(result.role,user.id);
+    const mapped=roleMapping(result.role,user.id,organization.id);
     if(!mapped)return respond(res,403,{message:'This Music role is not provisioned for SSO'});
     const session=seal({
       userId:user.id,userName:String(user.name||'').slice(0,150),
