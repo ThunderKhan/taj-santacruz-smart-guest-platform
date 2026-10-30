@@ -1,4 +1,4 @@
-import {getConfig,sameOrigin,cookie,sidCookie,txCookie,respond} from '../_lib/vsph.js';
+import {getConfig,sameOrigin,cookie,sidCookie,txCookie,respond} from '../../server/vsph.js';
 export default function handler(req,res){
   if(req.method!=='POST')return respond(res,405,{message:'Method not allowed'});
   const config=getConfig();
