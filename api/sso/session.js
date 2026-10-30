@@ -15,7 +15,7 @@ export default async function handler(req,res){
       res.setHeader('Set-Cookie',cookie(sidCookie,'',config,0));
       return respond(res,401,{message:'Music access revoked or expired'});
     }
-    const mapped=roleMapping(result.role,value.userId);
+    const mapped=roleMapping(result.role,value.userId,value.organizationId);
     if(!mapped||mapped.role!==value.role|| (mapped.role==='musician'&&mapped.musicianId!==value.musicianId)){
       res.setHeader('Set-Cookie',cookie(sidCookie,'',config,0));
       return respond(res,403,{message:'Music role has changed'});
