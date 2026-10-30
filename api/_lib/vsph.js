@@ -87,7 +87,7 @@ export const sessionSeconds=SESSION_SECONDS;
 export function validHost(req,config) {
   return String(req.headers?.host||'').toLowerCase()===new URL(config.music).host.toLowerCase();
 }
-export function roleMapping(role,userId){
+export function roleMapping(role,userId,organizationId){
   // Platform administrators do not automatically gain a Music staff role.
   if(['admin','manager','staff','super_admin'].includes(role))return {role:'staff'};
   if(role!=='musician')return null;
@@ -95,7 +95,7 @@ export function roleMapping(role,userId){
   // in a tenant-scoped database. Never derive a performer ID from their name.
   let map;
   try{map=JSON.parse(process.env.MUSIC_PERFORMER_ID_MAP||'{}')}catch{return null}
-  const musicianId=map[userId];
+  const musicianId=map[organizationId+':'+userId];
   if(typeof musicianId!=='string'||!musicianId.trim())return null;
   return {role:'musician',musicianId};
 }
