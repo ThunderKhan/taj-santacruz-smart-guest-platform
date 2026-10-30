@@ -1,4 +1,4 @@
-import {getConfig,validHost,unseal,getCookie,txCookie,sidCookie,cookie,respond,redirect,equals,roleMapping,portalCall,isUuid,seal,sessionSeconds} from '../_lib/vsph.js';
+import {getConfig,validHost,unseal,getCookie,txCookie,sidCookie,cookie,respond,redirect,equals,roleMapping,portalCall,isUuid,seal,sessionSeconds} from '../../server/vsph.js';
 export default async function handler(req,res){
   if(req.method!=='GET')return respond(res,405,{message:'Method not allowed'});
   const config=getConfig();
