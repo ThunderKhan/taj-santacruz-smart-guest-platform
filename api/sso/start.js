@@ -1,4 +1,4 @@
-import {getConfig,token,hash,isUuid,validHost,seal,cookie,txCookie,redirect,respond} from '../_lib/vsph.js';
+import {getConfig,token,hash,isUuid,validHost,seal,cookie,txCookie,redirect,respond} from '../../server/vsph.js';
 export default function handler(req,res){
   if(req.method!=='GET')return respond(res,405,{message:'Method not allowed'});
   const config=getConfig();
