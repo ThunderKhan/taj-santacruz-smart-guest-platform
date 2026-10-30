@@ -88,9 +88,13 @@ export function StaffLayout() {
             <Button
               variant="outlineDark"
               size="sm"
-              onClick={() => {
-                signOut();
-                navigate('/login', { replace: true });
+              onClick={async () => {
+                try {
+                  await signOut();
+                  navigate('/login', { replace: true });
+                } catch {
+                  window.alert('Music sign-out failed. Please try again.');
+                }
               }}
             >
               <LogOut aria-hidden="true" className="h-4 w-4" />

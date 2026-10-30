@@ -22,6 +22,7 @@ import { EventsDashboard } from '@/features/events/EventsDashboard';
 import { MusiciansDashboard } from '@/features/staff/MusiciansDashboard';
 import { MusicianEvents } from '@/features/musician/MusicianEvents';
 import { LoginPage } from '@/pages/LoginPage';
+import { SsoWelcome } from '@/pages/SsoWelcome';
 import { NotFound } from '@/pages/NotFound';
 import { useAuth, type Role } from '@/store/AuthProvider';
 
@@ -33,7 +34,8 @@ import { useAuth, type Role } from '@/store/AuthProvider';
  * This is presentation-layer routing only, not authorisation.
  */
 function RequireRole({ role, children }: { role: Role; children: ReactNode }) {
-  const { session } = useAuth();
+  const { session, authLoading } = useAuth();
+  if (authLoading) return <div role="status" className="min-h-dvh grid place-items-center">Checking Music access…</div>;
   if (!session) return <Navigate to="/login" replace />;
   if (session.role !== role) {
     return <Navigate to={session.role === 'staff' ? '/staff' : '/musician'} replace />;
@@ -63,6 +65,7 @@ export default function App() {
 
       {/* 3 — Demo sign-in for the two back-of-house roles ------------------ */}
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/sso/welcome" element={<SsoWelcome />} />
 
       {/* 4 — Staff console: celebration enquiries + musician accounts ------ */}
       <Route

@@ -2,6 +2,8 @@
 
 **Unofficial concept demonstration · frontend only**
 
+> **VSPH SSO integration (optional, not yet deployed here):** A separate Vercel Functions receiver, encrypted session cookies and central VSPH staff/musician sign-in are available on the `feat/vsph-sso-vercel-receiver` branch. These are **disabled until configured**. The prototype still uses browser-only sample data; SSO does not turn it into a production database. See [docs/VSPH_SSO.md](docs/VSPH_SSO.md) for the handshake, environment variables, role mapping and validation limits. The `vsph-music-system.vercel.app` deployment has not been verified as linked to this repository.\n\n
+
 A high-fidelity, fully interactive frontend prototype of two connected hotel
 experiences:
 

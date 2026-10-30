@@ -18,7 +18,7 @@ import { PROPERTY } from '@/data/property';
  * happens in the browser and grants nothing beyond this prototype.
  */
 export function LoginPage() {
-  const { session, signIn } = useAuth();
+  const { session, signIn, authLoading, ssoEnabled, portalUrl } = useAuth();
   const { musicians } = useRequests();
   const navigate = useNavigate();
   const location = useLocation();
@@ -31,6 +31,35 @@ export function LoginPage() {
   const [musicianUsername, setMusicianUsername] = useState('');
   const [musicianPassword, setMusicianPassword] = useState('');
   const [musicianError, setMusicianError] = useState<string | undefined>();
+
+  if (authLoading) {
+    return <main role="status" className="min-h-dvh grid place-items-center">Checking sign-in status…</main>;
+  }
+
+  // In SSO mode, never render the demo username/password controls.
+  if (ssoEnabled && !session) {
+    return (
+      <main className="min-h-dvh bg-ivory-100 px-5 py-16 text-ink-900">
+        <section className="mx-auto max-w-xl rounded-card border border-cream-300 bg-white p-7 text-center shadow-soft">
+          <p className="eyebrow text-gold-600">CENTRAL ACCOUNT</p>
+          <h1 className="display mt-3 text-3xl">Sign in through VSPH</h1>
+          <p className="mt-4 text-sm leading-relaxed text-warm-600">
+            Your Music access is managed centrally. Sign into your VSPH Control Center account,
+            select Music and choose the customer organization you are authorized to access.
+          </p>
+          {portalUrl ? (
+            <a href={portalUrl + '/login'} className="mt-6 inline-flex min-h-11 items-center justify-center rounded-md bg-ink-900 px-6 text-sm font-semibold text-white">
+              Open VSPH Control Center
+            </a>
+          ) : <p className="mt-5 text-sm text-warm-600">Contact your VSPH administrator for access.</p>}
+          <p className="mt-6 text-xs text-warm-500">
+            Guest QR music requests do not require a staff account.
+          </p>
+          <Link to="/guest" className="mt-3 inline-block text-sm font-semibold text-ink-900 underline">Continue as guest</Link>
+        </section>
+      </main>
+    );
+  }
 
   // Already signed in → skip the screen and land on the right console.
   if (session) {
